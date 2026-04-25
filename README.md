@@ -1,6 +1,6 @@
 # AQUA-ATMOS
 
-Reference implementation of the AQUA-ATMOS business rules and AI hybrid control loop.
+Reference implementation of the AQUA-ATMOS AI hybrid control loop.
 
 ## Quick start
 

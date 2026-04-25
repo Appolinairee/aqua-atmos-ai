@@ -1,6 +1,6 @@
 import pytest
 
-from aqua_atmos.dew_point import magnus_dew_point
+from dew_point import magnus_dew_point
 
 
 def test_magnus_dew_point_known_value_30c_70rh() -> None:

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import math
 
-from .constants import MAGNUS_A, MAGNUS_B
+from constants import MAGNUS_A, MAGNUS_B
+
 
 def magnus_dew_point(temp_c: float, rel_humidity_pct: float) -> float:
     """Compute dew point (C) from ambient temperature and relative humidity."""
