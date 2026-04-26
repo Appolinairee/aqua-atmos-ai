@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from data.labeler import label_cycle
-from data.synthetic_generator import generate_synthetic_dataset, generate_synthetic_year
+from data_pipeline.labeler import label_cycle
+from data_pipeline.synthetic_generator import generate_synthetic_dataset, generate_synthetic_year
 
 
 def test_generate_synthetic_dataset_creates_24_cycles_per_day(tmp_path: Path) -> None:

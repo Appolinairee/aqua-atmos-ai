@@ -28,6 +28,7 @@ htmlcov/
 .idea/
 *.swp
 *.swo
+.ipynb_checkpoints/
 
 # OS files
 .DS_Store

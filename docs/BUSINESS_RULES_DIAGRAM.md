@@ -1,75 +1,120 @@
 # Diagramme Mermaid - Regles Metier AQUA-ATMOS
 
-```mermaid
-flowchart TD
-    A[Entrees capteurs<br/>HR, T air, T condenseur<br/>Delta HR, T collecteur, Rayonnement] --> S{Sécurité pure}
-    A2[Entrees sécurité<br/>Réservoir, SOC batterie] --> S
-
-    S -->|Réservoir > 95 pourcent| S1[Standby total<br/>VCRC OFF, Sorbant veille, PWM 0]
-    S -->|SOC batterie < 20 pourcent| S2[VCRC OFF forcé]
-    S -->|OK| B[Variables calculées]
-
-    B --> B1[Point de rosée Td<br/>Magnus a=17.625 b=243.04]
-    B --> B2[Rapport humidité w_gkg<br/>depuis RH, T air, pression]
-
-    B1 --> R[Évaluation règles Y]
-    B2 --> R
-
-    R --> V{Règles VCRC}
-    V -->|HR < 40 pourcent| V1[OFF]
-    V -->|Td <= 2 C| V2[OFF anti-givrage]
-    V -->|w_gkg < 6 g par kg| V3[OFF]
-    V -->|HR >= 40 pourcent et Td > 2 C et w_gkg >= 6| V4[ON]
-
-    R --> M{Sorbant sature et extraction possible}
-    M -->|Oui| M1[Regeneration]
-    M -->|Non| M2{HR >= seuil sorbant}
-
-    M2 -->|Oui| M3[Absorption]
-    M2 -->|Non| M4[Veille]
-
-    M1 --> H1[Resistance chauffante ON si solaire insuffisant]
-
-    V1 --> Y[Y_règles]
-    V2 --> Y
-    V3 --> Y
-    V4 --> Y
-    M1 --> Y
-    M3 --> Y
-    M4 --> Y
-
-    Y --> D[Décision pure<br/>actionneurs et sécurité]
-
-    Y --> G[Génération données synthétiques]
-    G --> G1[Labels Y produits par les règles]
-    G1 --> H[Historique]
-
-    H --> R1[Ligne réelle injectée à chaque cycle]
-    R1 --> L[Apprentissage en ligne]
-    L --> AI[Modèle IA mis à jour]
-
-    AI --> PRED[Prédiction / diagnostic]
-    PRED --> LOG[Logging cycle]
-    D --> LOG
-    R1 --> LOG
-```
-
-## Diagramme Mermaid - Couche IA (X en entree, Y en sortie)
+## Diagramme Mermaid - Vue Globale Sans IA
 
 ```mermaid
 flowchart TD
-    X[Features X<br/>HR, T air, T condenseur<br/>Delta HR, T collecteur<br/>Td calcule, w_gkg calcule<br/>Heure jour/nuit] --> M[Modele IA]
-    M --> Y1[Y1 VCRC_state]
-    M --> Y2[Y2 Sorbent_mode]
-    M --> Y3[Y3 Heater_state]
+    A[Capteurs metier<br/>HR, T air, T condenseur<br/>Delta HR sorbant, T collecteur<br/>Rayonnement, Heure] --> B[Calculs derives]
+    A2[Capteurs securite<br/>Niveau reservoir<br/>SOC batterie] --> D[Evaluation des regles metier]
 
-    Y1 --> V[Validation par surcouche energetique pure]
-    Y2 --> V
-    Y3 --> V
-    V --> D[Decision finale appliquee]
+    B --> B1[Point de rosee Td]
+    B --> B2[Rapport humidite w_gkg]
+
+    B1 --> D
+    B2 --> D
+    A --> D
+    A2 --> D
+
+    D --> V[Decision VCRC]
+    D --> M[Decision sorbant]
+
+    V --> F[Decision finale actionneurs]
+    M --> F
+
+    F --> G[Execution actionneurs]
+    G --> L[Logging du cycle]
 ```
 
-## Diagramme Mermaid - Surcouche Energetique Pure (sans autorite IA)
+## Diagramme Mermaid - Regles Metier VCRC
+
+```mermaid
+flowchart TD
+    A[Entrees metier et securite] --> V
+
+    V{Regles VCRC}
+    V -->|Reservoir plein, niveau superieur a 95 pourcent| V1[OFF]
+    V -->|Energie insuffisante, SOC inferieur a 20 pourcent| V2[OFF]
+    V -->|HR faible, HR inferieure a 40 pourcent| V3[OFF]
+    V -->|Anti givrage, Td inferieure ou egale a 2 C| V4[OFF anti-givrage]
+    V -->|Humidite insuffisante, w_gkg inferieur a 6 g par kg| V5[OFF]
+    V -->|Sinon| V6[ON]
+```
+
+## Diagramme Mermaid - Regles Metier Sorbant
+
+```mermaid
+flowchart TD
+    A[Entrees metier et securite] --> S
+
+    S{Regles sorbant}
+    S -->|Reservoir plein, niveau superieur a 95 pourcent| S1[Veille]
+    S -->|Sorbant sature, delta HR absolu inferieur ou egal a 1 pourcent, extraction possible| S2[Regeneration]
+    S -->|Sinon si HR suffisante, HR superieure ou egale a 40 pourcent| S3[Absorption]
+    S -->|Sinon| S4[Veille]
+
+    S2 --> S5{Extraction possible<br/>solaire superieur ou egal a 500 W par m2<br/>ou SOC superieur ou egal a 35 pourcent}
+    S5 -->|Solaire suffisant| S6[Regeneration sans chauffage]
+    S5 -->|Solaire insuffisant et SOC suffisant| S7[Regeneration avec chauffage]
+    S5 -->|Fin regeneration a definir<br/>temperature, duree, delta HR| S8[Retour a l'absorption ou veille]
+```
+
+## A Discuter - Points D Ombre
+
+- Oscillations autour des seuils:
+  sans hysteresis, le systeme peut basculer trop souvent entre ON et OFF
+- Saturation sorbant:
+  le delta HR seul peut etre insuffisant ou trop bruite pour conclure
+- Fin de regeneration:
+  le critere operationnel reste a fixer clairement
+- Vision partielle de l energie:
+  le SOC ne represente pas toute la puissance reellement disponible
+- Energie insuffisante:
+  il faut preciser comment combiner batterie faible et ensoleillement insuffisant
+- Robustesse capteurs:
+  il faut anticiper bruit, derive, retard ou panne de mesure
+
+## Pourquoi Ajouter L IA
+
+```mermaid
+flowchart TD
+    A[Regles a seuils fixes] --> B[Lecture partielle du terrain]
+    B --> C[Agadir: air cotier plus frais et humide]
+    B --> D[Dakar: air plus chaud et plus humide]
+    C --> E[Un meme seuil peut couper trop tot]
+    D --> F[Un meme seuil peut declencher trop souvent ou trop tard]
+
+    A --> G[Pas d apprentissage des donnees reelles]
+    A --> H[Faible adaptation au vieillissement materiel]
+    A --> I[Efficacite energetique limitee]
+    A --> J[Faible previsibilite pour l utilisateur]
+```
+
+## Ce Que L IA Peut Faire Concretement
+
+```mermaid
+flowchart TD
+    A[IA embarquee] --> B[Adapter la decision au site reel]
+    A --> C[Apprendre progressivement des donnees terrain]
+    A --> D[Ameliorer la precision des decisions]
+    A --> E[Reduire le gaspillage d energie]
+    A --> F[Mieux anticiper cycles et production]
+    A --> G[Detecter derives et comportements anormaux]
+```
+
+## IA 1 - Reactivite Instantanee
+
+```mermaid
+flowchart TD
+    A[X<br/>HR, T air, T condenseur<br/>Delta HR sorbant, T collecteur<br/>Solaire ou PV, Heure<br/>Td, w_gkg] --> B[Fonction de decision IA]
+    B --> C1[Y1 VCRC_state<br/>predire si le VCRC doit etre ON ou OFF maintenant<br/>etats : ON, OFF]
+    B --> C2[Y2 Sorbent_mode<br/>predire si le sorbant doit etre en absorption, regeneration ou veille maintenant<br/>etats : Absorption, Regeneration, Veille]
+
+    C1 --> D[Validation par surcouche logique pure<br/>energie, niveau du reservoir]
+    C2 --> D
+    D --> E[Decision finale appliquee]
+```
+
+## Diagramme Mermaid - Surcouche Energetique Pure
 
 ```mermaid
 flowchart TD
@@ -80,21 +125,31 @@ flowchart TD
     E4[Niveau reservoir] --> B
     E5[Priorites systeme] --> B
 
-    B -->|Contrainte violee| C[Aucune activation]
-    C --> C1[VCRC OFF]
-    C --> C2[Chauffage OFF]
-    C --> C3[Sorbant veille]
-
+    B -->|Contrainte violee| C[Decision forcee securite<br/>VCRC OFF<br/>Sorbant veille]
     B -->|Conforme| D[Decision autorisee]
 
-    C1 --> F[Decision finale actionneurs]
-    C2 --> F
-    C3 --> F
+    C --> F[Decision finale appliquee]
     D --> F
 
     F --> G[Execution actionneurs]
     G --> H[Logging complet]
-    H --> H1[Decision proposee]
-    H --> H2[Contraintes energie]
-    H --> H3[Decision finale appliquee]
+```
+
+## IA 2 - Prevision Des Cycles
+
+```mermaid
+flowchart TD
+    A[IA prevision des cycles] --> B[Cycle VCRC]
+    A --> C[Cycle sorbant]
+    A --> D[Production]
+
+    B --> B1[Debut probable]
+    B --> B2[Duree utile]
+    B --> B3[Fin probable]
+
+    C --> C1[Saturation probable]
+    C --> C2[Debut regeneration]
+    C --> C3[Fin regeneration probable]
+
+    D --> D1[Production probable comme consequence des cycles]
 ```
