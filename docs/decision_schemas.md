@@ -153,3 +153,42 @@ flowchart TD
 
     D --> D1[Production probable comme consequence des cycles]
 ```
+
+## IA 2 - Niveau 2 (Prediction et Planification)
+
+```mermaid
+flowchart TD
+    D0[Donnees entrainement offline] --> NASA[NASA POWER\nHR, T, Rayonnement\n2 ans horaire Agadir]
+    NASA --> CALC[Calcul Tdp + AH\nFormule Magnus]
+    CALC --> Y1CALC[Calcul Y1 physique\nL/h par equation VCRC]
+    Y1CALC --> DATASET[aqua_atmos_dataset.csv\nX: HR, T, Tdp, AH, Ray, Heure, Mois\nY: Y1 L/h]
+    DATASET --> TRAIN[Entrainement\nRandom Forest Regressor]
+    TRAIN --> MODEL[Modele entraine\nX vers Y1 L/h]
+
+    P0[Planification journaliere chaque soir] --> METEO[OpenWeatherMap\nHR, T, Rayonnement\n24h a venir]
+    METEO --> XFUTUR[X futurs\npar creneau horaire]
+    XFUTUR --> MODEL
+    MODEL --> Y1PRED[Y1 predit\npar creneau horaire]
+    Y1PRED --> PLAN[Planification cycles\nheure + duree optimale]
+    PLAN --> ACT[Execution actionneurs]
+
+    ACT --> LOG[Logging\nY1_predit vs production_reelle]
+    LOG --> UPDATE[Mise a jour modele\nchaque mois]
+    UPDATE --> MODEL
+```
+
+## IA 2 - Niveau 1 (Execution et Securite)
+
+```mermaid
+flowchart LR
+    RESERVOIR[Niveau reservoir superieur a 95 pourcent\nmode Standby] --> OVERRIDE[Override uC]
+    BATTERIE[SOC batterie inferieur a 20 pourcent\nVCRC OFF] --> OVERRIDE
+    GIVRAGE[Tdp inferieure ou egale a 2 C\nAH inferieure a 6 g par kg\nHR inferieure a 40 pourcent] --> OVERRIDE
+
+    PLAN[Plan de cycles issu du niveau 2] --> CHECK{Surcouche securite\ncontrainte violee ?}
+    OVERRIDE --> CHECK
+
+    CHECK -->|Oui| ANNUL[Annuler cycle]
+    CHECK -->|Non| HYSTE[Hysteresis uC\nanti chattering\nON si HR superieure a 60 pourcent\nOFF si HR inferieure a 50 pourcent]
+    HYSTE --> ACT[Actionneurs\nVCRC / Volets / PWM]
+```
