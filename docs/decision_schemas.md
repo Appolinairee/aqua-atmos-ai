@@ -1,6 +1,6 @@
-# Diagramme Mermaid - Regles Metier AQUA-ATMOS
+# AQUA-ATMOS - Decision Schemas
 
-## Diagramme Mermaid - Vue Globale Sans IA
+## Global View Without AI
 
 ```mermaid
 flowchart TD
@@ -25,7 +25,7 @@ flowchart TD
     G --> L[Logging du cycle]
 ```
 
-## Diagramme Mermaid - Regles Metier VCRC
+## Regles Metier VCRC
 
 ```mermaid
 flowchart TD
@@ -40,7 +40,7 @@ flowchart TD
     V -->|Sinon| V6[ON]
 ```
 
-## Diagramme Mermaid - Regles Metier Sorbant
+## Regles Metier Sorbant
 
 ```mermaid
 flowchart TD
@@ -114,7 +114,7 @@ flowchart TD
     D --> E[Decision finale appliquee]
 ```
 
-## Diagramme Mermaid - Surcouche Energetique Pure
+## Surcouche Energetique Pure
 
 ```mermaid
 flowchart TD
