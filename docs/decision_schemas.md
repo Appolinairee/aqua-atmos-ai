@@ -1,6 +1,6 @@
-# AQUA-ATMOS - Decision Schemas
+# Regles Metier AQUA-ATMOS
 
-## Global View Without AI
+## Vue Globale Sans IA
 
 ```mermaid
 flowchart TD

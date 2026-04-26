@@ -1,8 +1,8 @@
-# AQUA-ATMOS - Functional Context
+# AQUA-ATMOS - Contexte Metier
 
 ## Vision
 
-AQUA-ATMOS is a hybrid atmospheric water harvesting system designed for isolated areas.
+AQUA-ATMOS est un systeme hybride de production d'eau atmospherique pour des zones isolees.
 
 - Cible climat: cote africaine (Agadir / Dakar)
 - Objectif de production: 1.0 a 1.8 L/jour

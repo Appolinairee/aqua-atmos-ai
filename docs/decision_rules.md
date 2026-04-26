@@ -1,6 +1,6 @@
-# AQUA-ATMOS - Decision Rules
+# AQUA-ATMOS - Regles Metier
 
-## Calculation Rules
+## Formules de calcul
 
 ### Point de rosee (Magnus)
 
