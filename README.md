@@ -1,4 +1,4 @@
-<p align="center">
+<p>
 	<img src="assets/logo.png" alt="AQUA-ATMOS logo" width="220" />
 </p>
 
