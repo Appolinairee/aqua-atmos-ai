@@ -4,7 +4,7 @@
 
 AQUA-ATMOS est un systeme hybride de production d'eau atmospherique pour des zones isolees.
 
-- Cible climat: cote africaine (Agadir / Dakar)
+- Cible climat: panel cotier africain representatif (Agadir, Dakar, Abidjan, Douala, Mombasa, Walvis Bay)
 - Objectif de production: 1.0 a 1.8 L/jour
 - Contrainte: autonomie solaire
 - Plateforme cible: ESP32

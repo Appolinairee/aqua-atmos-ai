@@ -14,7 +14,8 @@ This repository currently provides:
 - Deterministic decision rules for VCRC and sorbent modules.
 - Hard safety overrides (reservoir and battery).
 - Rule-based cycle labeling.
-- Synthetic climate cycle generation and yearly dataset export.
+- Open-weather ingestion for selected African coastal cities.
+- Synthetic climate cycle generation and yearly dataset export from observed hourly statistics.
 - Begin models training
 - Unit tests covering nominal and boundary cases.
 
@@ -31,4 +32,10 @@ Run test suite:
 
 ```bash
 PYTHONPATH=src pytest -q
+
+Build climate inputs from the open API:
+
+```bash
+PYTHONPATH=src python scripts/ingest_open_meteo.py --cities all --start-date 2019-01-01 --end-date 2024-12-31
+```
 ```

@@ -1,0 +1,16 @@
+{
+  "city_id": "walvis_bay",
+  "display_name": "Walvis Bay",
+  "country": "Namibia",
+  "source": "Open-Meteo Historical Weather API",
+  "source_url": "https://archive-api.open-meteo.com/v1/archive?latitude=-22.9576&longitude=14.5053&start_date=2019-01-01&end_date=2024-12-31&hourly=temperature_2m%2Crelative_humidity_2m%2Cdew_point_2m%2Ccloud_cover%2Cshortwave_radiation&timezone=GMT",
+  "start_date": "2019-01-01",
+  "end_date": "2024-12-31",
+  "hourly_variables": [
+    "temperature_2m",
+    "relative_humidity_2m",
+    "dew_point_2m",
+    "cloud_cover",
+    "shortwave_radiation"
+  ]
+}
