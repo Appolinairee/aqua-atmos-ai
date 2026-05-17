@@ -6,7 +6,7 @@ Ce dossier contient les notebooks de travail pour la suite du pipeline ML.
 
 1. `02_visualisation_climat_et_synthetique.ipynb`
 2. `03_pretraitement_pour_entrainement.ipynb`
-3. notebook d'entrainement a ajouter ensuite
+3. `04_entrainement_et_benchmark_modeles.ipynb`
 
 ## Convention de structure
 

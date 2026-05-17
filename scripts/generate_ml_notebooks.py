@@ -81,6 +81,12 @@ def build_visualization_notebook() -> dict[str, object]:
             import pandas as pd
             import seaborn as sns
 
+            try:
+                from IPython.display import display
+            except Exception:
+                def display(value):
+                    print(value)
+
             sns.set_theme(style="whitegrid", context="talk")
 
             PROJECT_ROOT = Path.cwd().resolve()
@@ -375,6 +381,12 @@ def build_preprocessing_notebook() -> dict[str, object]:
             import numpy as np
             import pandas as pd
 
+            try:
+                from IPython.display import display
+            except Exception:
+                def display(value):
+                    print(value)
+
             PROJECT_ROOT = Path.cwd().resolve()
             if PROJECT_ROOT.name == "notebooks":
                 PROJECT_ROOT = PROJECT_ROOT.parent
@@ -668,9 +680,474 @@ def build_preprocessing_notebook() -> dict[str, object]:
     return notebook(cells)
 
 
+def build_training_notebook() -> dict[str, object]:
+    cells = [
+        md_cell(
+            """
+            # Entrainement Et Benchmark Des Modeles AQUA-ATMOS
+
+            Ce notebook compare plusieurs modeles sur les memes splits et les memes metriques, sans fuite de pretraitement.
+            """
+        ),
+        md_cell(
+            """
+            ## 1. Chargement Des Splits
+
+            **Objectif**
+            Charger les jeux `train`, `validation` et `test` prepares au notebook precedent.
+
+            **Resultat attendu**
+            Disposer de trois jeux alignes et prets pour un benchmark reproductible.
+            """
+        ),
+        code_cell(
+            """
+            from pathlib import Path
+
+            import numpy as np
+            import pandas as pd
+
+            try:
+                from IPython.display import display
+            except Exception:
+                def display(value):
+                    print(value)
+
+            PROJECT_ROOT = Path.cwd().resolve()
+            if PROJECT_ROOT.name == "notebooks":
+                PROJECT_ROOT = PROJECT_ROOT.parent
+
+            DATA_DIR = PROJECT_ROOT / "data" / "processed"
+            MODEL_DIR = PROJECT_ROOT / "data" / "modeling"
+            MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
+            train_df = pd.read_csv(DATA_DIR / "train_split.csv")
+            valid_df = pd.read_csv(DATA_DIR / "validation_split.csv")
+            test_df = pd.read_csv(DATA_DIR / "test_split.csv")
+
+            train_df.shape, valid_df.shape, test_df.shape
+            """
+        ),
+        md_cell(
+            """
+            ## 2. Definition Des Features Et Des Cibles
+
+            **Objectif**
+            Declarer explicitement les colonnes d'entree et les cibles du benchmark.
+
+            **Resultat attendu**
+            Eviter toute ambiguite entre les modeles compares.
+            """
+        ),
+        code_cell(
+            """
+            feature_columns = [
+                "city_id",
+                "hour",
+                "temp_air_c",
+                "hr_pct",
+                "solar_wm2",
+                "pv_voltage",
+                "temp_collector_c",
+                "temp_cond_c",
+                "delta_hr_sorbent",
+                "reservoir_level_pct",
+                "soc_battery_pct",
+                "dew_point_c",
+                "humidity_ratio_gkg",
+                "hour_sin",
+                "hour_cos",
+                "day_sin",
+                "day_cos",
+                "thermal_lift_c",
+                "collector_gain_c",
+                "is_daylight",
+                "high_humidity_flag",
+                "battery_stress_flag",
+                "reservoir_high_flag",
+            ]
+
+            target_columns = [
+                "vcrc_state",
+                "sorbent_mode_label",
+                "heater_on_label",
+                "sorbent_saturated_label",
+            ]
+
+            categorical_features = ["city_id"]
+            numeric_features = [column for column in feature_columns if column not in categorical_features]
+
+            pd.DataFrame(
+                {
+                    "feature_columns": pd.Series(feature_columns),
+                    "target_columns": pd.Series(target_columns),
+                }
+            )
+            """
+        ),
+        md_cell(
+            """
+            ## 3. Baselines Et Pipelines
+
+            **Objectif**
+            Definir un ensemble minimal mais serieux de modeles a comparer.
+
+            **Resultat attendu**
+            Avoir des pipelines homogenes et reutilisables pour chaque cible.
+            """
+        ),
+        code_cell(
+            """
+            from sklearn.compose import ColumnTransformer
+            from sklearn.dummy import DummyClassifier
+            from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+            from sklearn.impute import SimpleImputer
+            from sklearn.linear_model import LogisticRegression
+            from sklearn.pipeline import Pipeline
+            from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+
+            def make_preprocessor(scale_numeric: bool) -> ColumnTransformer:
+                numeric_steps = [("imputer", SimpleImputer(strategy="median"))]
+                if scale_numeric:
+                    numeric_steps.append(("scaler", StandardScaler()))
+
+                categorical_transformer = Pipeline(
+                    steps=[
+                        ("imputer", SimpleImputer(strategy="most_frequent")),
+                        ("encoder", OneHotEncoder(handle_unknown="ignore")),
+                    ]
+                )
+
+                return ColumnTransformer(
+                    transformers=[
+                        ("numeric", Pipeline(steps=numeric_steps), numeric_features),
+                        ("categorical", categorical_transformer, categorical_features),
+                    ]
+                )
+
+
+            model_factories = {
+                "dummy_most_frequent": lambda: DummyClassifier(strategy="most_frequent"),
+                "logistic_regression": lambda: LogisticRegression(max_iter=2000, class_weight="balanced"),
+                "random_forest": lambda: RandomForestClassifier(
+                    n_estimators=120,
+                    max_depth=8,
+                    min_samples_leaf=2,
+                    random_state=42,
+                    n_jobs=-1,
+                    class_weight="balanced_subsample",
+                ),
+                "hist_gradient_boosting": lambda: HistGradientBoostingClassifier(
+                    learning_rate=0.08,
+                    max_depth=6,
+                    max_iter=120,
+                    random_state=42,
+                ),
+            }
+
+
+            def make_pipeline(model_name: str) -> Pipeline:
+                estimator = model_factories[model_name]()
+                scale_numeric = model_name == "logistic_regression"
+                return Pipeline(
+                    steps=[
+                        ("preprocessor", make_preprocessor(scale_numeric=scale_numeric)),
+                        ("model", estimator),
+                    ]
+                )
+            """
+        ),
+        md_cell(
+            """
+            ## 4. Metriques Et Cas Extemes
+
+            **Objectif**
+            Utiliser les memes metriques sur chaque cible et suivre separement les cas difficiles.
+
+            **Resultat attendu**
+            Pouvoir comparer les modeles sans se limiter a l'accuracy globale.
+            """
+        ),
+        code_cell(
+            """
+            from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, precision_score, recall_score
+
+
+            X_train = train_df[feature_columns].copy()
+            X_valid = valid_df[feature_columns].copy()
+            X_test = test_df[feature_columns].copy()
+
+            y_train = {target: train_df[target].copy() for target in target_columns}
+            y_valid = {target: valid_df[target].copy() for target in target_columns}
+            y_test = {target: test_df[target].copy() for target in target_columns}
+
+
+            train_extreme_thresholds = {
+                "temp_air_c_low": train_df["temp_air_c"].quantile(0.01),
+                "temp_air_c_high": train_df["temp_air_c"].quantile(0.99),
+                "hr_pct_high": train_df["hr_pct"].quantile(0.99),
+                "solar_wm2_low_nonzero": train_df.loc[train_df["solar_wm2"] > 0, "solar_wm2"].quantile(0.05),
+                "soc_battery_pct_low": train_df["soc_battery_pct"].quantile(0.05),
+            }
+
+
+            def build_extreme_mask(frame: pd.DataFrame) -> pd.Series:
+                return (
+                    (frame["temp_air_c"] <= train_extreme_thresholds["temp_air_c_low"])
+                    | (frame["temp_air_c"] >= train_extreme_thresholds["temp_air_c_high"])
+                    | (frame["hr_pct"] >= train_extreme_thresholds["hr_pct_high"])
+                    | ((frame["solar_wm2"] > 0) & (frame["solar_wm2"] <= train_extreme_thresholds["solar_wm2_low_nonzero"]))
+                    | (frame["soc_battery_pct"] <= train_extreme_thresholds["soc_battery_pct_low"])
+                )
+
+
+            extreme_masks = {
+                "validation": build_extreme_mask(valid_df),
+                "test": build_extreme_mask(test_df),
+            }
+
+
+            def classification_metrics(y_true: pd.Series, y_pred: np.ndarray) -> dict[str, float]:
+                if len(pd.Series(y_true).unique()) == 1:
+                    balanced_accuracy = float((pd.Series(y_true).to_numpy() == y_pred).mean())
+                else:
+                    balanced_accuracy = balanced_accuracy_score(y_true, y_pred)
+
+                return {
+                    "accuracy": accuracy_score(y_true, y_pred),
+                    "balanced_accuracy": balanced_accuracy,
+                    "precision_macro": precision_score(y_true, y_pred, average="macro", zero_division=0),
+                    "recall_macro": recall_score(y_true, y_pred, average="macro", zero_division=0),
+                    "f1_macro": f1_score(y_true, y_pred, average="macro", zero_division=0),
+                }
+            """
+        ),
+        md_cell(
+            """
+            ## 5. Benchmark Sur Validation
+
+            **Objectif**
+            Entrainer tous les modeles sur le train et les comparer sur validation.
+
+            **Resultat attendu**
+            Identifier un meilleur modele par cible avec un tableau clair des scores.
+            """
+        ),
+        code_cell(
+            """
+            validation_rows = []
+            fitted_models = {}
+
+            for target_name in target_columns:
+                fitted_models[target_name] = {}
+                for model_name in model_factories:
+                    pipeline = make_pipeline(model_name)
+                    pipeline.fit(X_train, y_train[target_name])
+
+                    y_valid_pred = pipeline.predict(X_valid)
+                    metrics = classification_metrics(y_valid[target_name], y_valid_pred)
+
+                    extreme_mask = extreme_masks["validation"]
+                    extreme_metrics = classification_metrics(
+                        y_valid[target_name].loc[extreme_mask],
+                        y_valid_pred[extreme_mask.to_numpy()],
+                    )
+
+                    validation_rows.append(
+                        {
+                            "target": target_name,
+                            "model": model_name,
+                            **{f"validation_{name}": value for name, value in metrics.items()},
+                            **{f"validation_extreme_{name}": value for name, value in extreme_metrics.items()},
+                        }
+                    )
+                    fitted_models[target_name][model_name] = pipeline
+
+            validation_results = pd.DataFrame(validation_rows).sort_values(
+                ["target", "validation_f1_macro", "validation_balanced_accuracy"],
+                ascending=[True, False, False],
+            )
+
+            display(validation_results)
+            """
+        ),
+        md_cell(
+            """
+            ## 6. Selection Du Meilleur Modele Par Cible
+
+            **Objectif**
+            Choisir un seul modele par cible sur la base de la validation.
+
+            **Resultat attendu**
+            Avoir une selection explicite avant toute evaluation sur test.
+            """
+        ),
+        code_cell(
+            """
+            best_models = (
+                validation_results.sort_values(
+                    ["target", "validation_f1_macro", "validation_balanced_accuracy"],
+                    ascending=[True, False, False],
+                )
+                .groupby("target", as_index=False)
+                .first()
+                .rename(columns={"model": "selected_model"})
+            )
+
+            display(best_models[["target", "selected_model", "validation_f1_macro", "validation_balanced_accuracy"]])
+            """
+        ),
+        md_cell(
+            """
+            ## 7. Evaluation Finale Sur Test
+
+            **Objectif**
+            Evaluer uniquement les modeles retenus sur le jeu de test.
+
+            **Resultat attendu**
+            Obtenir une estimation finale non biaisee des performances.
+            """
+        ),
+        code_cell(
+            """
+            test_rows = []
+
+            for row in best_models.itertuples(index=False):
+                target_name = row.target
+                model_name = row.selected_model
+                pipeline = fitted_models[target_name][model_name]
+
+                y_test_pred = pipeline.predict(X_test)
+                metrics = classification_metrics(y_test[target_name], y_test_pred)
+
+                extreme_mask = extreme_masks["test"]
+                extreme_metrics = classification_metrics(
+                    y_test[target_name].loc[extreme_mask],
+                    y_test_pred[extreme_mask.to_numpy()],
+                )
+
+                test_rows.append(
+                    {
+                        "target": target_name,
+                        "selected_model": model_name,
+                        **{f"test_{name}": value for name, value in metrics.items()},
+                        **{f"test_extreme_{name}": value for name, value in extreme_metrics.items()},
+                    }
+                )
+
+            test_results = pd.DataFrame(test_rows).sort_values("target")
+            display(test_results)
+            """
+        ),
+        md_cell(
+            """
+            ## 8. Matrices De Confusion
+
+            **Objectif**
+            Qualifier les erreurs du meilleur modele sur chaque cible.
+
+            **Resultat attendu**
+            Voir clairement quelles classes sont confondues.
+            """
+        ),
+        code_cell(
+            """
+            import matplotlib.pyplot as plt
+            import seaborn as sns
+            from sklearn.metrics import confusion_matrix
+
+            fig, axes = plt.subplots(2, 2, figsize=(18, 14))
+            axes = axes.ravel()
+
+            for ax, row in zip(axes, best_models.itertuples(index=False)):
+                target_name = row.target
+                model_name = row.selected_model
+                pipeline = fitted_models[target_name][model_name]
+                y_pred = pipeline.predict(X_test)
+
+                labels = sorted(y_test[target_name].unique().tolist())
+                matrix = confusion_matrix(y_test[target_name], y_pred, labels=labels)
+                sns.heatmap(matrix, annot=True, fmt="d", cmap="Blues", cbar=False, ax=ax)
+                ax.set_title(f"{target_name} - {model_name}")
+                ax.set_xlabel("Prediction")
+                ax.set_ylabel("Verite")
+                ax.set_xticklabels(labels)
+                ax.set_yticklabels(labels)
+
+            plt.tight_layout()
+            plt.show()
+            """
+        ),
+        md_cell(
+            """
+            ## 9. Export Des Resultats
+
+            **Objectif**
+            Sauvegarder les tableaux de benchmark pour les reutiliser dans un rapport ou un dashboard.
+
+            **Resultat attendu**
+            Obtenir des CSV de synthese lisibles hors notebook.
+            """
+        ),
+        code_cell(
+            """
+            validation_path = MODEL_DIR / "benchmark_validation_results.csv"
+            best_models_path = MODEL_DIR / "selected_models.csv"
+            test_path = MODEL_DIR / "benchmark_test_results.csv"
+
+            validation_results.to_csv(validation_path, index=False)
+            best_models.to_csv(best_models_path, index=False)
+            test_results.to_csv(test_path, index=False)
+
+            pd.DataFrame(
+                {
+                    "file": [validation_path.name, best_models_path.name, test_path.name],
+                    "rows": [len(validation_results), len(best_models), len(test_results)],
+                }
+            )
+            """
+        ),
+        md_cell(
+            """
+            ## 10. Resume Final
+
+            **Objectif**
+            Resumer les decisions a retenir pour la suite du projet.
+
+            **Resultat attendu**
+            Produire une table courte pour guider l'industrialisation du meilleur pipeline.
+            """
+        ),
+        code_cell(
+            """
+            final_summary = best_models.merge(test_results, on="target", how="left")
+            display(
+                final_summary[
+                    [
+                        "target",
+                        "selected_model_x",
+                        "validation_f1_macro",
+                        "validation_balanced_accuracy",
+                        "test_f1_macro",
+                        "test_balanced_accuracy",
+                        "test_extreme_f1_macro",
+                        "test_extreme_balanced_accuracy",
+                    ]
+                ]
+                .rename(columns={"selected_model_x": "selected_model"})
+                .sort_values("target")
+            )
+            """
+        ),
+    ]
+    return notebook(cells)
+
+
 def main() -> None:
     write_notebook(NOTEBOOKS_DIR / "02_visualisation_climat_et_synthetique.ipynb", build_visualization_notebook())
     write_notebook(NOTEBOOKS_DIR / "03_pretraitement_pour_entrainement.ipynb", build_preprocessing_notebook())
+    write_notebook(NOTEBOOKS_DIR / "04_entrainement_et_benchmark_modeles.ipynb", build_training_notebook())
 
 
 if __name__ == "__main__":
