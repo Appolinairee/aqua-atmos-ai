@@ -718,8 +718,6 @@ def build_training_notebook() -> dict[str, object]:
                 PROJECT_ROOT = PROJECT_ROOT.parent
 
             DATA_DIR = PROJECT_ROOT / "data" / "processed"
-            MODEL_DIR = PROJECT_ROOT / "data" / "modeling"
-            MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
             train_df = pd.read_csv(DATA_DIR / "train_split.csv")
             valid_df = pd.read_csv(DATA_DIR / "validation_split.csv")
@@ -860,7 +858,35 @@ def build_training_notebook() -> dict[str, object]:
         ),
         md_cell(
             """
-            ## 4. Metriques Et Cas Extemes
+            ## 4. Equilibre Des Cibles
+
+            **Objectif**
+            Verifier s'il y a assez de cas positifs et si certaines classes sont trop rares.
+
+            **Resultat attendu**
+            Voir rapidement si un bon score global peut cacher un desequilibre.
+            """
+        ),
+        code_cell(
+            """
+            balance_rows = []
+            for split_name, frame in [("train", train_df), ("validation", valid_df), ("test", test_df)]:
+                for target in target_columns:
+                    balance_rows.append(
+                        {
+                            "split": split_name,
+                            "target": target,
+                            "distribution": frame[target].value_counts(normalize=True).sort_index().to_dict(),
+                        }
+                    )
+
+            balance_df = pd.DataFrame(balance_rows)
+            display(balance_df)
+            """
+        ),
+        md_cell(
+            """
+            ## 5. Metriques Et Cas Extemes
 
             **Objectif**
             Utiliser les memes metriques sur chaque cible et suivre separement les cas difficiles.
@@ -925,7 +951,7 @@ def build_training_notebook() -> dict[str, object]:
         ),
         md_cell(
             """
-            ## 5. Benchmark Sur Validation
+            ## 6. Benchmark Sur Validation
 
             **Objectif**
             Entrainer tous les modeles sur le train et les comparer sur validation.
@@ -974,7 +1000,7 @@ def build_training_notebook() -> dict[str, object]:
         ),
         md_cell(
             """
-            ## 6. Selection Du Meilleur Modele Par Cible
+            ## 7. Selection Du Meilleur Modele Par Cible
 
             **Objectif**
             Choisir un seul modele par cible sur la base de la validation.
@@ -1000,7 +1026,7 @@ def build_training_notebook() -> dict[str, object]:
         ),
         md_cell(
             """
-            ## 7. Evaluation Finale Sur Test
+            ## 8. Evaluation Finale Sur Test
 
             **Objectif**
             Evaluer uniquement les modeles retenus sur le jeu de test.
@@ -1042,13 +1068,13 @@ def build_training_notebook() -> dict[str, object]:
         ),
         md_cell(
             """
-            ## 8. Matrices De Confusion
+            ## 9. Matrices De Confusion Separees
 
             **Objectif**
             Qualifier les erreurs du meilleur modele sur chaque cible.
 
             **Resultat attendu**
-            Voir clairement quelles classes sont confondues.
+            Voir clairement quelles classes sont confondues, avec une image par cible.
             """
         ),
         code_cell(
@@ -1057,10 +1083,7 @@ def build_training_notebook() -> dict[str, object]:
             import seaborn as sns
             from sklearn.metrics import confusion_matrix
 
-            fig, axes = plt.subplots(2, 2, figsize=(18, 14))
-            axes = axes.ravel()
-
-            for ax, row in zip(axes, best_models.itertuples(index=False)):
+            for row in best_models.itertuples(index=False):
                 target_name = row.target
                 model_name = row.selected_model
                 pipeline = fitted_models[target_name][model_name]
@@ -1068,61 +1091,211 @@ def build_training_notebook() -> dict[str, object]:
 
                 labels = sorted(y_test[target_name].unique().tolist())
                 matrix = confusion_matrix(y_test[target_name], y_pred, labels=labels)
+                plt.figure(figsize=(7, 6))
+                ax = plt.gca()
                 sns.heatmap(matrix, annot=True, fmt="d", cmap="Blues", cbar=False, ax=ax)
                 ax.set_title(f"{target_name} - {model_name}")
                 ax.set_xlabel("Prediction")
                 ax.set_ylabel("Verite")
                 ax.set_xticklabels(labels)
                 ax.set_yticklabels(labels)
+                plt.tight_layout()
+                plt.show()
+            """
+        ),
+        md_cell(
+            """
+            ## 10. Lecture Des Performances
 
+            **Objectif**
+            Afficher les performances de facon plus lisible et plus complete que par un cout agrege.
+
+            **Resultat attendu**
+            Comparer les modeles par cible et par metrique, sans melanger artificiellement les scores.
+            """
+        ),
+        code_cell(
+            """
+            validation_overview = validation_results[
+                [
+                    "target",
+                    "model",
+                    "validation_accuracy",
+                    "validation_balanced_accuracy",
+                    "validation_precision_macro",
+                    "validation_recall_macro",
+                    "validation_f1_macro",
+                    "validation_extreme_f1_macro",
+                ]
+            ].copy()
+            display(validation_overview.sort_values(["target", "validation_f1_macro"], ascending=[True, False]))
+
+            heatmap_frame = validation_overview.pivot_table(
+                index=["target", "model"],
+                values=[
+                    "validation_accuracy",
+                    "validation_balanced_accuracy",
+                    "validation_precision_macro",
+                    "validation_recall_macro",
+                    "validation_f1_macro",
+                    "validation_extreme_f1_macro",
+                ],
+            )
+
+            plt.figure(figsize=(12, 10))
+            sns.heatmap(heatmap_frame, annot=True, fmt=".3f", cmap="YlGnBu")
+            plt.title("Heatmap des performances sur validation")
+            plt.tight_layout()
+            plt.show()
+
+            for target_name, target_frame in validation_overview.groupby("target"):
+                melted = target_frame.melt(
+                    id_vars=["target", "model"],
+                    value_vars=[
+                        "validation_accuracy",
+                        "validation_balanced_accuracy",
+                        "validation_precision_macro",
+                        "validation_recall_macro",
+                        "validation_f1_macro",
+                        "validation_extreme_f1_macro",
+                    ],
+                    var_name="metric",
+                    value_name="score",
+                )
+
+                plt.figure(figsize=(12, 6))
+                sns.barplot(data=melted, x="metric", y="score", hue="model")
+                plt.title(f"Comparaison des modeles - {target_name}")
+                plt.xlabel("Metrique")
+                plt.ylabel("Score")
+                plt.xticks(rotation=30)
+                plt.ylim(0, 1.05)
+                plt.tight_layout()
+                plt.show()
+            """
+        ),
+        md_cell(
+            """
+            ## 11. Frontiere De Decision 2D
+
+            **Objectif**
+            Afficher une vraie frontiere de decision lisible sur deux variables metier.
+
+            **Resultat attendu**
+            Voir comment les classes sont separees sur un plan interpretable.
+            """
+        ),
+        code_cell(
+            """
+            reference_target = "vcrc_state"
+            decision_features = ["hr_pct", "dew_point_c"]
+
+            from sklearn.linear_model import LogisticRegression
+            from sklearn.pipeline import Pipeline
+            from sklearn.preprocessing import StandardScaler
+
+            boundary_model = Pipeline(
+                steps=[
+                    ("scaler", StandardScaler()),
+                    ("model", LogisticRegression(max_iter=2000, class_weight="balanced")),
+                ]
+            )
+            boundary_model.fit(train_df[decision_features], y_train[reference_target])
+
+            x_min, x_max = X_test["hr_pct"].min() - 2, X_test["hr_pct"].max() + 2
+            y_min, y_max = X_test["dew_point_c"].min() - 1, X_test["dew_point_c"].max() + 1
+            xx, yy = np.meshgrid(
+                np.linspace(x_min, x_max, 250),
+                np.linspace(y_min, y_max, 250),
+            )
+            grid = pd.DataFrame({"hr_pct": xx.ravel(), "dew_point_c": yy.ravel()})
+            zz = boundary_model.predict_proba(grid)[:, 1].reshape(xx.shape)
+
+            plot_df = X_test[decision_features].copy()
+            plot_df["y_true"] = y_test[reference_target].to_numpy()
+
+            plt.figure(figsize=(10, 7))
+            contour = plt.contourf(xx, yy, zz, levels=np.linspace(0, 1, 11), cmap="RdYlBu_r", alpha=0.65)
+            plt.contour(xx, yy, zz, levels=[0.5], colors="black", linewidths=2)
+            sns.scatterplot(
+                data=plot_df,
+                x="hr_pct",
+                y="dew_point_c",
+                hue="y_true",
+                palette="Set1",
+                edgecolor="black",
+                alpha=0.75,
+            )
+            plt.title(f"Frontiere de decision 2D - {reference_target}")
+            plt.xlabel("Humidite relative (%)")
+            plt.ylabel("Dew point (C)")
+            plt.colorbar(contour, label="Probabilite predite de classe 1")
+            plt.tight_layout()
+            plt.show()
+
+            print(
+                "Note: la frontiere 2D ci-dessus est une vue interpretable avec un modele lineaire sur deux variables. "
+                "Un RandomForest ou un Gradient Boosting n'a pas un hyperplan unique simple a tracer."
+            )
+            """
+        ),
+        md_cell(
+            """
+            ## 12. Vue 3D Des Donnees
+
+            **Objectif**
+            Garder une vue 3D descriptive des donnees autour de la cible de reference.
+
+            **Resultat attendu**
+            Voir comment les points se distribuent dans l'espace metier.
+            """
+        ),
+        code_cell(
+            """
+            from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+
+            plot_df_3d = X_test[["hr_pct", "dew_point_c", "solar_wm2"]].copy()
+            plot_df_3d["y_true"] = y_test[reference_target].to_numpy()
+
+            fig = plt.figure(figsize=(10, 7))
+            ax = fig.add_subplot(111, projection="3d")
+            scatter = ax.scatter(
+                plot_df_3d["hr_pct"],
+                plot_df_3d["dew_point_c"],
+                plot_df_3d["solar_wm2"],
+                c=plot_df_3d["y_true"],
+                cmap="Set1",
+                alpha=0.55,
+            )
+            ax.set_title(f"Vue 3D des donnees - {reference_target}")
+            ax.set_xlabel("HR (%)")
+            ax.set_ylabel("Dew point (C)")
+            ax.set_zlabel("Solar (W/m2)")
+            fig.colorbar(scatter, ax=ax, shrink=0.6, label="Classe vraie")
             plt.tight_layout()
             plt.show()
             """
         ),
         md_cell(
             """
-            ## 9. Export Des Resultats
-
-            **Objectif**
-            Sauvegarder les tableaux de benchmark pour les reutiliser dans un rapport ou un dashboard.
-
-            **Resultat attendu**
-            Obtenir des CSV de synthese lisibles hors notebook.
-            """
-        ),
-        code_cell(
-            """
-            validation_path = MODEL_DIR / "benchmark_validation_results.csv"
-            best_models_path = MODEL_DIR / "selected_models.csv"
-            test_path = MODEL_DIR / "benchmark_test_results.csv"
-
-            validation_results.to_csv(validation_path, index=False)
-            best_models.to_csv(best_models_path, index=False)
-            test_results.to_csv(test_path, index=False)
-
-            pd.DataFrame(
-                {
-                    "file": [validation_path.name, best_models_path.name, test_path.name],
-                    "rows": [len(validation_results), len(best_models), len(test_results)],
-                }
-            )
-            """
-        ),
-        md_cell(
-            """
-            ## 10. Resume Final
+            ## 13. Resume Final
 
             **Objectif**
             Resumer les decisions a retenir pour la suite du projet.
 
             **Resultat attendu**
-            Produire une table courte pour guider l'industrialisation du meilleur pipeline.
+            Produire une table courte pour guider l'industrialisation du meilleur pipeline, avec une note sur le split.
             """
         ),
         code_cell(
             """
+            split_note = (
+                "Le split temporel evite la fuite du futur, mais peut cacher certains regimes si train, validation "
+                "et test ne couvrent pas les memes saisons ou cas rares."
+            )
+
             final_summary = best_models.merge(test_results, on="target", how="left")
-            display(
+            final_summary = (
                 final_summary[
                     [
                         "target",
@@ -1138,6 +1311,8 @@ def build_training_notebook() -> dict[str, object]:
                 .rename(columns={"selected_model_x": "selected_model"})
                 .sort_values("target")
             )
+            display(final_summary)
+            print(split_note)
             """
         ),
     ]
