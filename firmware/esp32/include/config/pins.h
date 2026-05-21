@@ -8,6 +8,7 @@ constexpr int I2C_SCL_PIN = 22;
 constexpr int ONEWIRE_PIN = 4;
 
 constexpr int RESERVOIR_LEVEL_ADC_PIN = 34;
+constexpr int RESERVOIR_CONTACT_PIN = 5;
 constexpr int BATTERY_VOLTAGE_ADC_PIN = 35;
 
 constexpr int VCRC_RELAY_PIN = 26;
