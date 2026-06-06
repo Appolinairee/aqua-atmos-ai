@@ -1,8 +1,12 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#if defined(AQUA_APP_TEST_DHT11)
+#if defined(AQUA_APP_TEST_DHT11) || defined(AQUA_APP_TEST_DHT22) || defined(AQUA_APP_TEST_DHT22_OLED)
 #include <DHT.h>
+#endif
+
+#if defined(AQUA_APP_TEST_DHT22_OLED) || defined(AQUA_APP_TEST_LCD_ONLY)
+#include <LiquidCrystal_I2C.h>
 #endif
 
 #if defined(AQUA_APP_TEST_SENSOR_1) || defined(AQUA_APP_TEST_SENSOR_2) || \
@@ -25,6 +29,21 @@ constexpr unsigned long kLoopPeriodMs = 2000UL;
 constexpr int kDht11Pin = 5;
 constexpr int kDht11Type = DHT11;
 DHT dht11(kDht11Pin, kDht11Type);
+#endif
+
+#if defined(AQUA_APP_TEST_DHT22) || defined(AQUA_APP_TEST_DHT22_OLED)
+constexpr int kDht22Pin = 5;
+constexpr int kDht22Type = DHT22;
+DHT dht22(kDht22Pin, kDht22Type);
+#endif
+
+#if defined(AQUA_APP_TEST_DHT22_OLED)
+// LCD 1602A à l'adresse 0x27 (16 colonnes, 2 lignes)
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+#endif
+
+#if defined(AQUA_APP_TEST_LCD_ONLY)
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 #endif
 
 #if defined(AQUA_APP_TEST_SENSOR_1) || defined(AQUA_APP_TEST_SENSOR_2) || \
@@ -61,16 +80,6 @@ void print_sht31_reading(const char* label, Adafruit_SHT31& sensor) {
   Serial.println(hr_pct);
 }
 
-void print_reservoir_reading() {
-  const int raw = analogRead(aqua_atmos::config::RESERVOIR_LEVEL_ADC_PIN);
-  const float pct = aqua_atmos::sensors::reservoir_percent_from_adc(raw);
-
-  Serial.print("reservoir_raw=");
-  Serial.print(raw);
-  Serial.print(", reservoir_pct=");
-  Serial.println(pct);
-}
-
 void setup_single_sht31(const char* title, Adafruit_SHT31& sensor, uint8_t address) {
   print_banner(title);
   setup_i2c();
@@ -99,17 +108,53 @@ void setup_dual_sht31() {
     }
   }
 }
+#endif
+
+#if defined(AQUA_APP_TEST_RESERVOIR) || defined(AQUA_APP_TEST_ALL_SENSORS) || defined(AQUA_APP_RULES_V1)
+void print_reservoir_reading() {
+  const int raw = analogRead(aqua_atmos::config::RESERVOIR_LEVEL_ADC_PIN);
+  const float pct = aqua_atmos::sensors::reservoir_percent_from_adc(raw);
+
+  Serial.print("reservoir_raw=");
+  Serial.print(raw);
+  Serial.print(", reservoir_pct=");
+  Serial.println(pct);
+}
 
 void setup_reservoir() {
   print_banner("TEST RESERVOIR ANALOGIQUE");
   pinMode(aqua_atmos::config::RESERVOIR_LEVEL_ADC_PIN, INPUT);
 }
 
+void loop_reservoir_only() {
+  print_reservoir_reading();
+  delay(kLoopPeriodMs);
+}
+#endif
+
+#if defined(AQUA_APP_TEST_RESERVOIR_CONTACT) || defined(AQUA_APP_TEST_ALL_SENSORS) || defined(AQUA_APP_RULES_V1)
 void setup_reservoir_contact() {
   print_banner("TEST RESERVOIR CONTACT 2 FILS");
   pinMode(aqua_atmos::config::RESERVOIR_CONTACT_PIN, INPUT_PULLUP);
 }
 
+void loop_reservoir_contact() {
+  const int state = digitalRead(aqua_atmos::config::RESERVOIR_CONTACT_PIN);
+
+  Serial.print("reservoir_contact_state=");
+  Serial.print(state);
+  Serial.print(", interpretation=");
+  if (state == LOW) {
+    Serial.println("contact_detected");
+  } else {
+    Serial.println("open_or_dry");
+  }
+
+  delay(kLoopPeriodMs);
+}
+#endif
+
+#if defined(AQUA_APP_TEST_ALL_SENSORS) || defined(AQUA_APP_RULES_V1)
 void setup_all_sensors() {
   print_banner("TEST ENSEMBLE CAPTEURS");
   setup_i2c();
@@ -131,37 +176,6 @@ void setup_all_sensors() {
 void setup_rules() {
   setup_all_sensors();
   print_banner("TEST CAPTEURS + REGLES");
-}
-
-void loop_single_sht31(const char* label, Adafruit_SHT31& sensor) {
-  print_sht31_reading(label, sensor);
-  delay(kLoopPeriodMs);
-}
-
-void loop_dual_sht31() {
-  print_sht31_reading("ambient", ambient_sht31);
-  print_sht31_reading("sorbent", sorbent_sht31);
-  delay(kLoopPeriodMs);
-}
-
-void loop_reservoir_only() {
-  print_reservoir_reading();
-  delay(kLoopPeriodMs);
-}
-
-void loop_reservoir_contact() {
-  const int state = digitalRead(aqua_atmos::config::RESERVOIR_CONTACT_PIN);
-
-  Serial.print("reservoir_contact_state=");
-  Serial.print(state);
-  Serial.print(", interpretation=");
-  if (state == LOW) {
-    Serial.println("contact_detected");
-  } else {
-    Serial.println("open_or_dry");
-  }
-
-  delay(kLoopPeriodMs);
 }
 
 void loop_all_sensors() {
@@ -261,6 +275,73 @@ void loop_dht11() {
 }
 #endif
 
+#if defined(AQUA_APP_TEST_LCD_ONLY)
+void setup_lcd_only() {
+  print_banner("TEST LCD SEUL");
+  setup_i2c();
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("LCD SEUL OK !");
+}
+
+void loop_lcd_only() {
+  delay(kLoopPeriodMs);
+}
+#endif
+
+#if defined(AQUA_APP_TEST_DHT22_OLED)
+void setup_dht22_oled() {
+  print_banner("TEST DHT22 + LCD 1602");
+  setup_i2c();
+  dht22.begin();
+
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("AQUA-ATMOS");
+  lcd.setCursor(0, 1);
+  lcd.print("INITIALISATION...");
+  delay(2000);
+}
+
+void loop_dht22_oled() {
+  static unsigned long last_read_time = 0;
+  static float last_temp = 0.0;
+  static float last_hr = 0.0;
+
+  // Lecture toutes les 5 secondes pour stabiliser
+  if (millis() - last_read_time > 5000) {
+    noInterrupts();
+    last_hr = dht22.readHumidity();
+    last_temp = dht22.readTemperature();
+    interrupts();
+    last_read_time = millis();
+    
+    Serial.print("T: "); Serial.print(last_temp); Serial.print(" C, ");
+    Serial.print("H: "); Serial.print(last_hr); Serial.println(" %");
+  }
+
+  lcd.setCursor(0, 0);
+  if (isnan(last_temp)) {
+    lcd.print("Temp: Erreur    ");
+  } else {
+    lcd.print("Temp: "); lcd.print(last_temp, 1); lcd.print(" C   ");
+  }
+
+  lcd.setCursor(0, 1);
+  if (isnan(last_hr)) {
+    lcd.print("Hum : Erreur    ");
+  } else {
+    lcd.print("Hum : "); lcd.print(last_hr, 1); lcd.print(" %    ");
+  }
+  
+  delay(100);
+}
+#endif
+
 }  // namespace
 
 namespace aqua_atmos::app {
@@ -268,6 +349,12 @@ namespace aqua_atmos::app {
 void setup_selected_mode() {
 #if defined(AQUA_APP_TEST_DHT11)
   setup_dht11();
+#elif defined(AQUA_APP_TEST_DHT22)
+  setup_dht22();
+#elif defined(AQUA_APP_TEST_DHT22_OLED)
+  setup_dht22_oled();
+#elif defined(AQUA_APP_TEST_LCD_ONLY)
+  setup_lcd_only();
 #elif defined(AQUA_APP_TEST_SENSOR_1)
   setup_single_sht31(
       "TEST CAPTEUR 1 T/H",
@@ -292,6 +379,12 @@ void setup_selected_mode() {
 void loop_selected_mode() {
 #if defined(AQUA_APP_TEST_DHT11)
   loop_dht11();
+#elif defined(AQUA_APP_TEST_DHT22)
+  loop_dht22();
+#elif defined(AQUA_APP_TEST_DHT22_OLED)
+  loop_dht22_oled();
+#elif defined(AQUA_APP_TEST_LCD_ONLY)
+  loop_lcd_only();
 #elif defined(AQUA_APP_TEST_SENSOR_1)
   loop_single_sht31("sensor_1", ambient_sht31);
 #elif defined(AQUA_APP_TEST_SENSOR_2)
