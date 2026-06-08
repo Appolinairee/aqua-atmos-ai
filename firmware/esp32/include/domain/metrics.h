@@ -26,4 +26,22 @@ inline float compute_delta_hr_sorbent(float hr_in_pct, float hr_out_pct) {
   return hr_in_pct - hr_out_pct;
 }
 
+inline void enrich_derived_frame(const SensorFrame& sensors, DerivedFrame& derived) {
+  constexpr float kPi = 3.14159265F;
+  
+  derived.hour_sin = std::sin(2.0F * kPi * static_cast<float>(sensors.hour_of_day) / 24.0F);
+  derived.hour_cos = std::cos(2.0F * kPi * static_cast<float>(sensors.hour_of_day) / 24.0F);
+  
+  // Note: assuming day 0 for now as we don't have day of year in SensorFrame
+  derived.day_sin = 0.0F; 
+  derived.day_cos = 1.0F;
+  
+  derived.thermal_lift_c = sensors.temp_air_c - sensors.temp_cond_c;
+  derived.collector_gain_c = sensors.temp_collector_c - sensors.temp_air_c;
+  derived.is_daylight = (sensors.solar_wm2 > 0) ? 1 : 0;
+  derived.high_humidity_flag = (sensors.hr_pct >= 70.0F) ? 1 : 0;
+  derived.battery_stress_flag = (sensors.soc_battery_pct <= 25.0F) ? 1 : 0;
+  derived.reservoir_high_flag = (sensors.reservoir_level_pct >= 80.0F) ? 1 : 0;
+}
+
 }  // namespace aqua_atmos::domain

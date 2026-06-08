@@ -18,6 +18,7 @@
 #include "config/pins.h"
 #include "config/sensor_addresses.h"
 #include "control/rule_engine.h"
+#include "control/inference_engine.h"
 #include "domain/metrics.h"
 #include "sensors/sensor_math.h"
 
@@ -156,7 +157,7 @@ void loop_reservoir_contact() {
 
 #if defined(AQUA_APP_TEST_ALL_SENSORS) || defined(AQUA_APP_RULES_V1)
 void setup_all_sensors() {
-  print_banner("TEST ENSEMBLE CAPTEURS");
+  print_banner("TEST ENSEMBLE CAPTEURS (SIMULATION ALLOWED)");
   setup_i2c();
   pinMode(aqua_atmos::config::RESERVOIR_LEVEL_ADC_PIN, INPUT);
 
@@ -166,10 +167,7 @@ void setup_all_sensors() {
       begin_sht31(sorbent_sht31, aqua_atmos::config::SHT31_SORBENT_I2C_ADDRESS);
 
   if (!ambient_ok || !sorbent_ok) {
-    Serial.println("Erreur: impossible d'initialiser tous les capteurs.");
-    while (true) {
-      delay(1000);
-    }
+    Serial.println("Note: Un ou plusieurs capteurs SHT31 non detectes. Passage en mode simulation pour le test ML.");
   }
 }
 
@@ -204,10 +202,20 @@ void loop_all_sensors() {
 
 void loop_rules() {
   aqua_atmos::domain::SensorFrame sensors;
-  sensors.temp_air_c = ambient_sht31.readTemperature();
-  sensors.hr_pct = ambient_sht31.readHumidity();
-  sensors.hr_in_pct = ambient_sht31.readHumidity();
-  sensors.hr_out_pct = sorbent_sht31.readHumidity();
+  float t = ambient_sht31.readTemperature();
+  float h = ambient_sht31.readHumidity();
+  
+  // Simulation si capteurs absents
+  if (isnan(t) || isnan(h)) {
+    sensors.temp_air_c = 28.0F; // Valeur simulée
+    sensors.hr_pct = 75.0F;    // Valeur simulée
+  } else {
+    sensors.temp_air_c = t;
+    sensors.hr_pct = h;
+  }
+
+  sensors.hr_in_pct = sensors.hr_pct;
+  sensors.hr_out_pct = sensors.hr_pct - 5.0F;
   sensors.temp_cond_c = sensors.temp_air_c - 4.0F;
   sensors.temp_collector_c = sensors.temp_air_c + 10.0F;
   sensors.pv_voltage = 15.0F;
@@ -224,27 +232,24 @@ void loop_rules() {
   derived.delta_hr_sorbent =
       aqua_atmos::domain::compute_delta_hr_sorbent(sensors.hr_in_pct, sensors.hr_out_pct);
 
-  const auto vcrc = aqua_atmos::control::decide_vcrc(sensors, derived);
-  const auto sorbent = aqua_atmos::control::decide_sorbent(sensors, derived);
+  // Enrich for ML
+  aqua_atmos::domain::enrich_derived_frame(sensors, derived);
 
-  Serial.print("temp_air_c=");
-  Serial.print(sensors.temp_air_c);
-  Serial.print(", hr_pct=");
-  Serial.print(sensors.hr_pct);
-  Serial.print(", dew_point_c=");
-  Serial.print(derived.dew_point_c);
-  Serial.print(", humidity_ratio_gkg=");
-  Serial.print(derived.humidity_ratio_gkg);
-  Serial.print(", delta_hr_sorbent=");
-  Serial.print(derived.delta_hr_sorbent);
-  Serial.print(", reservoir_pct=");
-  Serial.print(sensors.reservoir_level_pct);
-  Serial.print(", vcrc_state=");
-  Serial.print(vcrc.state ? 1 : 0);
-  Serial.print(", sorbent_mode=");
-  Serial.print(static_cast<int>(sorbent.mode));
-  Serial.print(", heater_on=");
-  Serial.println(sorbent.heater_on ? 1 : 0);
+  const auto vcrc_rule = aqua_atmos::control::decide_vcrc(sensors, derived);
+  const auto sorbent_rule = aqua_atmos::control::decide_sorbent(sensors, derived);
+
+  aqua_atmos::domain::VcrcDecision vcrc_ml;
+  aqua_atmos::domain::SorbentDecision sorbent_ml;
+  aqua_atmos::control::run_inference(sensors, derived, vcrc_ml, sorbent_ml);
+
+  Serial.print("T="); Serial.print(sensors.temp_air_c);
+  Serial.print(", HR="); Serial.print(sensors.hr_pct);
+  Serial.print(", [RULE] VCRC="); Serial.print(vcrc_rule.state ? 1 : 0);
+  Serial.print(", SORB="); Serial.print(static_cast<int>(sorbent_rule.mode));
+  Serial.print(", HEAT="); Serial.print(sorbent_rule.heater_on ? 1 : 0);
+  Serial.print(" | [ML] VCRC="); Serial.print(vcrc_ml.state ? 1 : 0);
+  Serial.print(", SORB="); Serial.print(static_cast<int>(sorbent_ml.mode));
+  Serial.print(", HEAT="); Serial.println(sorbent_ml.heater_on ? 1 : 0);
 
   delay(kLoopPeriodMs);
 }

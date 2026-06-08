@@ -20,6 +20,18 @@ struct DerivedFrame {
   float dew_point_c = 0.0F;
   float humidity_ratio_gkg = 0.0F;
   float delta_hr_sorbent = 0.0F;
+  
+  // Missing features for ML models
+  float hour_sin = 0.0F;
+  float hour_cos = 0.0F;
+  float day_sin = 0.0F;
+  float day_cos = 0.0F;
+  float thermal_lift_c = 0.0F;
+  float collector_gain_c = 0.0F;
+  int is_daylight = 0;
+  int high_humidity_flag = 0;
+  int battery_stress_flag = 0;
+  int reservoir_high_flag = 0;
 };
 
 struct VcrcDecision {
