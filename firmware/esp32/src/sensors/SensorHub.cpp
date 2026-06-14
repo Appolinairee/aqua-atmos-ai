@@ -22,16 +22,25 @@ void SensorHub::begin() {
 domain::SensorFrame SensorHub::read() {
   domain::SensorFrame frame;
 
-  // 1. Ambiance (SHT31 Primaire)
-  if (has_sht_ambient_) {
-    frame.temp_air_c = sht_ambient_.readTemperature();
-    frame.hr_pct = sht_ambient_.readHumidity();
+  // Lecture Capteurs T/H
+  float t_sht = has_sht_ambient_ ? sht_ambient_.readTemperature() : NAN;
+  float h_sht = has_sht_ambient_ ? sht_ambient_.readHumidity() : NAN;
+  
+  float t_dht = dht_condenser_.readTemperature();
+  float h_dht = dht_condenser_.readHumidity();
+
+  // Logique de sélection Ambiance (Priorité SHT31, Repli DHT22)
+  if (!isnan(t_sht)) {
+    frame.temp_air_c = t_sht;
+    frame.hr_pct = h_sht;
+    frame.temp_cond_c = t_dht; // Le DHT22 reste sur le condenseur
+  } else {
+    frame.temp_air_c = t_dht;
+    frame.hr_pct = h_dht;
+    frame.temp_cond_c = t_dht; // En mode 1 seul capteur, on duplique
   }
 
-  // 2. Condenseur (DHT22 dédié)
-  frame.temp_cond_c = dht_condenser_.readTemperature();
-
-  // 3. Sorbant (SHT31 Secondaire pour calcul Delta HR)
+  // 3. Sorbant (SHT31 Secondaire)
   frame.hr_in_pct = frame.hr_pct;
   if (has_sht_sorbent_) {
     frame.hr_out_pct = sht_sorbent_.readHumidity();
