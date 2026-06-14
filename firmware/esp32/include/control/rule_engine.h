@@ -2,97 +2,62 @@
 
 #include "control/safety.h"
 #include "domain/types.h"
+#include "config/constants.h"
 
 namespace aqua_atmos::control {
 
-constexpr float kVcrcHrMinPct = 40.0F;
-constexpr float kVcrcDewPointMinC = 2.0F;
-constexpr float kVcrcHumidityRatioMinGkg = 6.0F;
-
-constexpr float kSorbentHrMinPct = 40.0F;
-constexpr float kSorbentDeltaHrSaturatedPct = 1.0F;
-constexpr float kSolarThresholdWm2 = 500.0F;
-constexpr float kHeaterSocThresholdPct = 35.0F;
-
-inline domain::VcrcDecision decide_vcrc(
-    const domain::SensorFrame& sensors,
-    const domain::DerivedFrame& derived) {
+inline domain::VcrcDecision decide_vcrc(const domain::SensorFrame& s, const domain::DerivedFrame& d) {
   domain::VcrcDecision decision;
-  if (is_hard_block(sensors)) {
-    decision.state = false;
-    return decision;
-  }
-  if (sensors.hr_pct < kVcrcHrMinPct) {
-    decision.state = false;
-    return decision;
-  }
-  if (derived.dew_point_c <= kVcrcDewPointMinC) {
-    decision.state = false;
-    return decision;
-  }
-  if (derived.humidity_ratio_gkg < kVcrcHumidityRatioMinGkg) {
-    decision.state = false;
-    return decision;
-  }
-  decision.state = true;
+  if (is_hard_block(s)) return decision;
+
+  decision.state = (s.hr_pct >= config::VCRC_MIN_HR_PCT && 
+                    d.dew_point_c > config::VCRC_MIN_DEW_POINT_C && 
+                    d.humidity_ratio_gkg >= config::VCRC_MIN_HUM_RATIO_GKG);
   return decision;
 }
 
-inline domain::SorbentDecision decide_sorbent(
-    const domain::SensorFrame& sensors,
-    const domain::DerivedFrame& derived) {
+inline domain::SorbentDecision decide_sorbent(const domain::SensorFrame& s, const domain::DerivedFrame& d) {
   domain::SorbentDecision decision;
-  if (is_hard_block(sensors)) {
-    decision.mode = domain::SorbentDecision::Mode::Veille;
-    decision.heater_on = false;
-    return decision;
-  }
+  if (is_hard_block(s)) return decision;
 
-  const bool saturated = derived.delta_hr_sorbent <= kSorbentDeltaHrSaturatedPct;
-  const bool solar_ok = sensors.solar_wm2 >= kSolarThresholdWm2;
-  const bool heater_energy_ok = sensors.soc_battery_pct >= kHeaterSocThresholdPct;
+  const bool is_saturated = d.delta_hr_sorbent <= config::SORBENT_SATURATION_DELTA;
+  const bool has_solar = s.solar_wm2 >= config::SOLAR_PRODUCTION_THRESHOLD;
+  const bool has_energy_for_heat = s.soc_battery_pct >= config::HEATER_MIN_SOC_PCT;
 
-  if (saturated && (solar_ok || heater_energy_ok)) {
+  if (is_saturated && (has_solar || has_energy_for_heat)) {
     decision.mode = domain::SorbentDecision::Mode::Regeneration;
-    decision.heater_on = !solar_ok && heater_energy_ok;
-    return decision;
-  }
-
-  if (sensors.hr_pct >= kSorbentHrMinPct) {
+    decision.heater_on = !has_solar && has_energy_for_heat;
+  } else if (s.hr_pct >= config::SORBENT_MIN_HR_PCT) {
     decision.mode = domain::SorbentDecision::Mode::Absorption;
-    decision.heater_on = false;
-    return decision;
   }
 
-  decision.mode = domain::SorbentDecision::Mode::Veille;
-  decision.heater_on = false;
   return decision;
 }
 
-inline domain::OutputFrame build_outputs(
-    const domain::VcrcDecision& vcrc,
-    const domain::SorbentDecision& sorbent) {
-  domain::OutputFrame outputs;
-  outputs.vcrc_relay_on = vcrc.state;
-  outputs.heater_relay_on = sorbent.heater_on;
-  outputs.vcrc_fan_pwm = vcrc.state ? 200 : 0;
+/**
+ * @brief Traduit les décisions logiques en consignes physiques (PWM, angles).
+ */
+inline domain::OutputFrame build_outputs(const domain::VcrcDecision& vcrc, const domain::SorbentDecision& sorb) {
+  domain::OutputFrame out;
+  out.vcrc_relay_on = vcrc.state;
+  out.heater_relay_on = sorb.heater_on;
+  out.vcrc_fan_pwm = vcrc.state ? 200 : 0;
 
-  switch (sorbent.mode) {
-    case domain::SorbentDecision::Mode::Veille:
-      outputs.sorbent_fan_pwm = 0;
-      outputs.servo_angle_deg = 0;
-      break;
+  switch (sorb.mode) {
     case domain::SorbentDecision::Mode::Absorption:
-      outputs.sorbent_fan_pwm = 160;
-      outputs.servo_angle_deg = 90;
+      out.sorbent_fan_pwm = 160;
+      out.servo_angle_deg = 90;
       break;
     case domain::SorbentDecision::Mode::Regeneration:
-      outputs.sorbent_fan_pwm = 220;
-      outputs.servo_angle_deg = 140;
+      out.sorbent_fan_pwm = 220;
+      out.servo_angle_deg = 140;
+      break;
+    default:
+      out.sorbent_fan_pwm = 0;
+      out.servo_angle_deg = 0;
       break;
   }
-
-  return outputs;
+  return out;
 }
 
 }  // namespace aqua_atmos::control

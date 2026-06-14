@@ -1,7 +1,16 @@
 #pragma once
 
+/**
+ * @file types.h
+ * @brief Définitions des structures de données transverses.
+ */
+
 namespace aqua_atmos::domain {
 
+/**
+ * @struct SensorFrame
+ * @brief Données brutes issues des capteurs.
+ */
 struct SensorFrame {
   float temp_air_c = 0.0F;
   float hr_pct = 0.0F;
@@ -16,16 +25,19 @@ struct SensorFrame {
   int hour_of_day = 0;
 };
 
+/**
+ * @struct DerivedFrame
+ * @brief Variables calculées pour la décision IA/Règles.
+ */
 struct DerivedFrame {
   float dew_point_c = 0.0F;
   float humidity_ratio_gkg = 0.0F;
   float delta_hr_sorbent = 0.0F;
   
-  // Missing features for ML models
   float hour_sin = 0.0F;
   float hour_cos = 0.0F;
   float day_sin = 0.0F;
-  float day_cos = 0.0F;
+  float day_cos = 1.0F;
   float thermal_lift_c = 0.0F;
   float collector_gain_c = 0.0F;
   int is_daylight = 0;
@@ -39,22 +51,21 @@ struct VcrcDecision {
 };
 
 struct SorbentDecision {
-  enum class Mode {
-    Veille,
-    Absorption,
-    Regeneration,
-  };
-
+  enum class Mode { Veille, Absorption, Regeneration };
   Mode mode = Mode::Veille;
   bool heater_on = false;
 };
 
+/**
+ * @struct OutputFrame
+ * @brief Consignes unifiées pour les actionneurs.
+ */
 struct OutputFrame {
   bool vcrc_relay_on = false;
   bool heater_relay_on = false;
-  int vcrc_fan_pwm = 0;
-  int sorbent_fan_pwm = 0;
-  int servo_angle_deg = 0;
+  int vcrc_fan_pwm = 0;    // 0-255
+  int sorbent_fan_pwm = 0; // 0-255
+  int servo_angle_deg = 0; // 0-180
 };
 
 }  // namespace aqua_atmos::domain
