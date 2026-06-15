@@ -5,6 +5,7 @@
 #include "config/pins.h"
 #include "config/sensor_addresses.h"
 #include "config/constants.h"
+#include "config/fallbacks.h"
 
 namespace aqua_atmos::sensors {
 

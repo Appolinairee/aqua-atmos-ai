@@ -38,9 +38,10 @@ void ActuatorHub::apply(const domain::OutputFrame& outputs, bool has_error) {
 
   digitalWrite(config::LED_ALARM_RED_PIN, has_error ? HIGH : LOW);
   digitalWrite(config::LED_VCRC_YELLOW_PIN, outputs.vcrc_relay_on ? HIGH : LOW);
-  digitalWrite(config::LED_SORBENT_BLUE_PIN, (outputs.sorbent_fan_pwm > 0) ? HIGH : LOW);
+  const bool sorbent_active = outputs.sorbent_fan_pwm > 0;
+  digitalWrite(config::LED_SORBENT_BLUE_PIN, sorbent_active ? HIGH : LOW);
 
-  bool active = outputs.vcrc_relay_on || outputs.sorbent_fan_pwm > 0;
+  bool active = outputs.vcrc_relay_on || sorbent_active;
   digitalWrite(config::LED_OK_GREEN_PIN, (!has_error && active) ? HIGH : LOW);
 }
 

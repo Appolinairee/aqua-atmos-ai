@@ -6,19 +6,34 @@
 
 namespace aqua_atmos::control {
 
-inline domain::VcrcDecision decide_vcrc(const domain::SensorFrame& s, const domain::DerivedFrame& d) {
+inline domain::VcrcDecision decide_vcrc(
+    const domain::SensorFrame& s,
+    const domain::DerivedFrame& d,
+    bool hard_block,
+    bool current_state) {
   domain::VcrcDecision decision;
-  if (is_hard_block(s)) return decision;
+  if (hard_block) return decision;
 
-  decision.state = (s.hr_pct >= config::VCRC_MIN_HR_PCT && 
+  // Hystérésis : Seuil bas si déjà allumé, sinon seuil standard
+  float hr_threshold = current_state ? (config::VCRC_MIN_HR_PCT - config::VCRC_HYSTERESIS_PCT) 
+                                     : config::VCRC_MIN_HR_PCT;
+
+  decision.state = (s.hr_pct >= hr_threshold && 
                     d.dew_point_c > config::VCRC_MIN_DEW_POINT_C && 
                     d.humidity_ratio_gkg >= config::VCRC_MIN_HUM_RATIO_GKG);
   return decision;
 }
 
-inline domain::SorbentDecision decide_sorbent(const domain::SensorFrame& s, const domain::DerivedFrame& d) {
+inline domain::VcrcDecision decide_vcrc(const domain::SensorFrame& s, const domain::DerivedFrame& d) {
+  return decide_vcrc(s, d, is_hard_block(s), false);
+}
+
+inline domain::SorbentDecision decide_sorbent(
+    const domain::SensorFrame& s,
+    const domain::DerivedFrame& d,
+    bool hard_block) {
   domain::SorbentDecision decision;
-  if (is_hard_block(s)) return decision;
+  if (hard_block) return decision;
 
   const bool is_saturated = d.delta_hr_sorbent <= config::SORBENT_SATURATION_DELTA;
   const bool has_solar = s.solar_wm2 >= config::SOLAR_PRODUCTION_THRESHOLD;
@@ -32,6 +47,10 @@ inline domain::SorbentDecision decide_sorbent(const domain::SensorFrame& s, cons
   }
 
   return decision;
+}
+
+inline domain::SorbentDecision decide_sorbent(const domain::SensorFrame& s, const domain::DerivedFrame& d) {
+  return decide_sorbent(s, d, is_hard_block(s));
 }
 
 inline void fuse_decisions(

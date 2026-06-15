@@ -53,13 +53,17 @@ void test_is_hard_block_detects_reservoir_or_battery_block() {
     sensors = make_safe_sensor_frame();
     sensors.soc_battery_pct = aqua_atmos::config::BATTERY_CRITICAL_SOC - 0.1F;
     TEST_ASSERT_TRUE(aqua_atmos::control::is_hard_block(sensors));
+
+    sensors = make_safe_sensor_frame();
+    sensors.temp_cond_c = aqua_atmos::config::CONDENSER_MAX_TEMP_C + 0.1F;
+    TEST_ASSERT_TRUE(aqua_atmos::control::is_hard_block(sensors));
 }
 
 // decide_vcrc
 
 void test_decide_vcrc_turns_on_when_all_conditions_are_met() {
     const VcrcDecision decision =
-        aqua_atmos::control::decide_vcrc(make_safe_sensor_frame(), make_vcrc_ready_derived_frame());
+        aqua_atmos::control::decide_vcrc(make_safe_sensor_frame(), make_vcrc_ready_derived_frame(), false, false);
 
     TEST_ASSERT_TRUE(decision.state);
 }
@@ -69,7 +73,7 @@ void test_decide_vcrc_stays_off_when_humidity_is_too_low() {
     sensors.hr_pct = aqua_atmos::config::VCRC_MIN_HR_PCT - 0.1F;
 
     const VcrcDecision decision =
-        aqua_atmos::control::decide_vcrc(sensors, make_vcrc_ready_derived_frame());
+        aqua_atmos::control::decide_vcrc(sensors, make_vcrc_ready_derived_frame(), false, false);
 
     TEST_ASSERT_FALSE(decision.state);
 }
@@ -79,7 +83,31 @@ void test_decide_vcrc_stays_off_on_hard_block() {
     sensors.reservoir_level_pct = aqua_atmos::config::RESERVOIR_FULL_THRESHOLD + 0.1F;
 
     const VcrcDecision decision =
-        aqua_atmos::control::decide_vcrc(sensors, make_vcrc_ready_derived_frame());
+        aqua_atmos::control::decide_vcrc(sensors, make_vcrc_ready_derived_frame(), true, false);
+
+    TEST_ASSERT_FALSE(decision.state);
+}
+
+void test_decide_vcrc_stays_on_when_humidity_drops_within_hysteresis() {
+    SensorFrame sensors = make_safe_sensor_frame();
+    // Humidité à 38% (entre 37% et 40%)
+    sensors.hr_pct = aqua_atmos::config::VCRC_MIN_HR_PCT - aqua_atmos::config::VCRC_HYSTERESIS_PCT + 1.0F;
+
+    // Si on était déjà ON, on doit RESTER ON
+    const VcrcDecision decision =
+        aqua_atmos::control::decide_vcrc(sensors, make_vcrc_ready_derived_frame(), false, true);
+
+    TEST_ASSERT_TRUE(decision.state);
+}
+
+void test_decide_vcrc_turns_off_when_humidity_drops_below_hysteresis() {
+    SensorFrame sensors = make_safe_sensor_frame();
+    // Humidité à 36% (sous le seuil de 37%)
+    sensors.hr_pct = aqua_atmos::config::VCRC_MIN_HR_PCT - aqua_atmos::config::VCRC_HYSTERESIS_PCT - 1.0F;
+
+    // Même si on était ON, on doit s'ÉTEINDRE
+    const VcrcDecision decision =
+        aqua_atmos::control::decide_vcrc(sensors, make_vcrc_ready_derived_frame(), false, true);
 
     TEST_ASSERT_FALSE(decision.state);
 }
@@ -322,6 +350,8 @@ void run_control_tests() {
     RUN_TEST(test_decide_vcrc_turns_on_when_all_conditions_are_met);
     RUN_TEST(test_decide_vcrc_stays_off_when_humidity_is_too_low);
     RUN_TEST(test_decide_vcrc_stays_off_on_hard_block);
+    RUN_TEST(test_decide_vcrc_stays_on_when_humidity_drops_within_hysteresis);
+    RUN_TEST(test_decide_vcrc_turns_off_when_humidity_drops_below_hysteresis);
 
     // decide_sorbent
     RUN_TEST(test_decide_sorbent_absorbs_when_humidity_is_available);
