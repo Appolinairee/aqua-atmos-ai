@@ -63,9 +63,10 @@ struct SorbentDecision {
 struct OutputFrame {
   bool vcrc_relay_on = false;
   bool heater_relay_on = false;
-  int vcrc_fan_pwm = 0;    // 0-255
-  int sorbent_fan_pwm = 0; // 0-255
-  int servo_angle_deg = 0; // 0-180
+  int vcrc_fan_pwm = 0;      // 0-255
+  int sorbent_fan_1_pwm = 0; // 0-255
+  int sorbent_fan_2_pwm = 0; // 0-255
+  int servo_angle_deg = 0;   // 0-180
 };
 
 }  // namespace aqua_atmos::domain

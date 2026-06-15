@@ -4,6 +4,7 @@
 #include "app/display_hub.h"
 #include "control/rule_engine.h"
 #include "control/inference_engine.h"
+#include "control/output_guard.h"
 #include "domain/metrics.h"
 
 using namespace aqua_atmos;
@@ -11,6 +12,7 @@ using namespace aqua_atmos;
 sensors::SensorHub sensor_hub;
 actuators::ActuatorHub actuator_hub;
 app::DisplayHub display_hub;
+control::OutputGuardState output_guard_state;
 
 void setup() {
   Serial.begin(115200);
@@ -31,18 +33,34 @@ void loop() {
 
   domain::VcrcDecision vcrc_rule = control::decide_vcrc(sensors, derived);
   domain::SorbentDecision sorb_rule = control::decide_sorbent(sensors, derived);
-  
-  domain::OutputFrame outputs = control::build_outputs(vcrc_rule, sorb_rule);
-  actuator_hub.apply(outputs, control::is_hard_block(sensors));
+  domain::VcrcDecision vcrc_inference;
+  domain::SorbentDecision sorb_inference;
+  control::run_inference(sensors, derived, vcrc_inference, sorb_inference);
 
-  display_hub.update(sensors, vcrc_rule, sorb_rule);
+  const bool hard_block = control::is_hard_block(sensors);
+  domain::VcrcDecision vcrc_decision;
+  domain::SorbentDecision sorb_decision;
+  control::fuse_decisions(vcrc_rule,
+                          sorb_rule,
+                          vcrc_inference,
+                          sorb_inference,
+                          hard_block,
+                          vcrc_decision,
+                          sorb_decision);
+  
+  domain::OutputFrame requested_outputs = control::build_outputs(vcrc_decision, sorb_decision);
+  domain::OutputFrame outputs =
+      control::apply_output_guard(requested_outputs, output_guard_state, millis(), hard_block);
+  actuator_hub.apply(outputs, hard_block);
+
+  display_hub.update(sensors, vcrc_decision, sorb_decision);
   
   static unsigned long last_log = 0;
   if (millis() - last_log > 2000) {
     last_log = millis();
     Serial.printf("T:%.1f HR:%.1f | VCRC:%d SORB:%d HEAT:%d\n", 
       sensors.temp_air_c, sensors.hr_pct, 
-      outputs.vcrc_relay_on, (int)sorb_rule.mode, outputs.heater_relay_on);
+      outputs.vcrc_relay_on, (int)sorb_decision.mode, outputs.heater_relay_on);
   }
 
   delay(100);

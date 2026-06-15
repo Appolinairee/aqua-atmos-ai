@@ -5,7 +5,7 @@
 #include <string.h>
 
 
-void predict_heater_on_label(const double * input, double * output) {
+inline void predict_heater_on_label(const double * input, double * output) {
     double var0[2];
     double var1[2];
     double var2[2];

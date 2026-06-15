@@ -5,7 +5,7 @@
 #include <string.h>
 
 
-void predict_sorbent_mode_label(const double * input, double * output) {
+inline void predict_sorbent_mode_label(const double * input, double * output) {
     double var0[3];
     double var1[3];
     double var2[3];

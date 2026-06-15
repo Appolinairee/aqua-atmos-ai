@@ -1,5 +1,5 @@
-* Logique de déclenchement hybride (Priorité et fusion IA/Règles).
-* Hystérésis & Anti-rebond (Protection des relais et compresseurs).
+* DONE - Logique de déclenchement hybride (Priorité et fusion IA/Règles).
+* DONE - Hystérésis & Anti-rebond (Protection des relais et compresseurs).
 * TDD & Tests Unitaires (Couverture complète du firmware).
 
 * Alignement temporel IA (Calcul Sin/Cos jour et année).
@@ -11,3 +11,10 @@
 
 * Apprentissage en ligne (Mise à jour des poids du modèle sur l'ESP32).
 * Gestion d'énergie (Modes Deep Sleep et économie solaire).
+
+
+
+appolinaireinnovation@gmail.com   Jul 3, 2026, 8:10 PM
+adandappolinaire229@gmail.com     Jul 14, 2026, 11:33 PM
+appolinaire.adande@imsp-uac.org   Jul 8, 2026, 12:12 AM
+atounfripe@gmail.com              

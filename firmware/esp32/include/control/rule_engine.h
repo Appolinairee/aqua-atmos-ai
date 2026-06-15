@@ -34,6 +34,27 @@ inline domain::SorbentDecision decide_sorbent(const domain::SensorFrame& s, cons
   return decision;
 }
 
+inline void fuse_decisions(
+    const domain::VcrcDecision& rule_vcrc,
+    const domain::SorbentDecision& rule_sorbent,
+    const domain::VcrcDecision& inference_vcrc,
+    const domain::SorbentDecision& inference_sorbent,
+    bool hard_block,
+    domain::VcrcDecision& fused_vcrc,
+    domain::SorbentDecision& fused_sorbent) {
+  fused_vcrc = domain::VcrcDecision();
+  fused_sorbent = domain::SorbentDecision();
+
+  if (hard_block) return;
+
+  fused_vcrc.state = rule_vcrc.state && inference_vcrc.state;
+  fused_sorbent.mode = rule_sorbent.mode;
+  fused_sorbent.heater_on = rule_sorbent.heater_on &&
+                            inference_sorbent.heater_on &&
+                            rule_sorbent.mode == domain::SorbentDecision::Mode::Regeneration &&
+                            inference_sorbent.mode == domain::SorbentDecision::Mode::Regeneration;
+}
+
 /**
  * @brief Traduit les décisions logiques en consignes physiques (PWM, angles).
  */
