@@ -35,3 +35,10 @@ htmlcov/
 Thumbs.db
 .pio/
 .todo
+
+# AI Tools and Instructions
+.codex
+.agents/
+.ai/
+.gemini/
+.github/copilot-instructions.md
