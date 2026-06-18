@@ -76,12 +76,18 @@ inline domain::OutputFrame build_outputs(const domain::VcrcDecision& vcrc, const
   switch (sorb.mode) {
     case domain::SorbentDecision::Mode::Absorption:
       out.servo_angle_deg = 90;
+      out.sorbent_fan_1_pwm = 220;
+      out.sorbent_fan_2_pwm = 220;
       break;
     case domain::SorbentDecision::Mode::Regeneration:
       out.servo_angle_deg = 0;
+      out.sorbent_fan_1_pwm = 160;
+      out.sorbent_fan_2_pwm = 160;
       break;
     default:
       out.servo_angle_deg = 0;
+      out.sorbent_fan_1_pwm = 0;
+      out.sorbent_fan_2_pwm = 0;
       break;
   }
   return out;

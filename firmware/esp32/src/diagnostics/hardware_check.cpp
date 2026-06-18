@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <Adafruit_SHT31.h>
+#include <Adafruit_SHTC3.h>
 #include <DHT.h>
 #include <ESP32Servo.h>
 #include <LiquidCrystal_I2C.h>
@@ -8,7 +8,7 @@
 
 using namespace aqua_atmos::config;
 
-Adafruit_SHT31 sht = Adafruit_SHT31();
+Adafruit_SHTC3 sht = Adafruit_SHTC3();
 DHT dht22_sorb(DHT22_SORBENT_PIN, DHT22);
 DHT dht11_evap(DHT11_EVAPORATOR_PIN, DHT11);
 Servo servo;
@@ -25,7 +25,7 @@ void setup() {
   lcd.print("DIAGNOSTIC MODE");
 
   // 2. Capteurs
-  bool sht_ok = sht.begin(0x44);
+  bool sht_ok = sht.begin();
   dht22_sorb.begin();
   dht11_evap.begin();
   pinMode(FLOAT_SWITCH_PIN, INPUT_PULLUP);
@@ -33,19 +33,19 @@ void setup() {
 
   // 3. Relais
   pinMode(VCRC_RELAY_PIN, OUTPUT);
-  pinMode(PUMP_RELAY_PIN, OUTPUT);
-  pinMode(FANS_RELAY_PIN, OUTPUT);
+  pinMode(HEATER_RELAY_PIN, OUTPUT);
+  pinMode(SORBENT_FAN_1_PWM_PIN, OUTPUT);
 
   // 4. LEDs
   pinMode(LED_ALARM_RED_PIN, OUTPUT);
   pinMode(LED_OK_GREEN_PIN, OUTPUT);
-  pinMode(LED_VCRC_BLUE_PIN, OUTPUT);
-  pinMode(LED_SORBENT_YELLOW_PIN, OUTPUT);
+  pinMode(LED_VCRC_YELLOW_PIN, OUTPUT);
+  pinMode(LED_SORBENT_BLUE_PIN, OUTPUT);
 
   // 5. Servo
-  servo.attach(23); // Selon ton tableau Orange/Jaune sur 23
+  servo.attach(SORBENT_SERVO_PIN);
 
-  Serial.printf("SHT31: %s\n", sht_ok ? "OK" : "MISSING");
+  Serial.printf("SHTC3: %s\n", sht_ok ? "OK" : "MISSING");
   delay(1000);
 }
 
@@ -53,7 +53,9 @@ void loop() {
   Serial.println("\n--- New Cycle ---");
 
   // Test des Capteurs
-  float t = sht.readTemperature();
+  sensors_event_t humidity, temp;
+  sht.getEvent(&humidity, &temp);
+  float t = temp.temperature;
   float h = dht22_sorb.readHumidity();
   bool float_st = digitalRead(FLOAT_SWITCH_PIN);
   
@@ -65,19 +67,19 @@ void loop() {
 
   // Test Séquentiel des Actionneurs
   Serial.println("Relais 1 (VCRC)...");
-  digitalWrite(VCRC_RELAY_PIN, HIGH); digitalWrite(LED_VCRC_BLUE_PIN, HIGH);
+  digitalWrite(VCRC_RELAY_PIN, HIGH); digitalWrite(LED_VCRC_YELLOW_PIN, HIGH);
   delay(1000);
-  digitalWrite(VCRC_RELAY_PIN, LOW); digitalWrite(LED_VCRC_BLUE_PIN, LOW);
+  digitalWrite(VCRC_RELAY_PIN, LOW); digitalWrite(LED_VCRC_YELLOW_PIN, LOW);
 
-  Serial.println("Relais 2 (Pompe)...");
-  digitalWrite(PUMP_RELAY_PIN, HIGH); digitalWrite(LED_SORBENT_YELLOW_PIN, HIGH);
+  Serial.println("Relais 2 (Heater)...");
+  digitalWrite(HEATER_RELAY_PIN, HIGH); digitalWrite(LED_SORBENT_BLUE_PIN, HIGH);
   delay(1000);
-  digitalWrite(PUMP_RELAY_PIN, LOW); digitalWrite(LED_SORBENT_YELLOW_PIN, LOW);
+  digitalWrite(HEATER_RELAY_PIN, LOW); digitalWrite(LED_SORBENT_BLUE_PIN, LOW);
 
   Serial.println("Relais 3 (Ventilos)...");
-  digitalWrite(FANS_RELAY_PIN, HIGH); digitalWrite(LED_OK_GREEN_PIN, HIGH);
+  digitalWrite(SORBENT_FAN_1_PWM_PIN, HIGH); digitalWrite(LED_OK_GREEN_PIN, HIGH);
   delay(1000);
-  digitalWrite(FANS_RELAY_PIN, LOW); digitalWrite(LED_OK_GREEN_PIN, LOW);
+  digitalWrite(SORBENT_FAN_1_PWM_PIN, LOW); digitalWrite(LED_OK_GREEN_PIN, LOW);
 
   Serial.println("Servo Move...");
   servo.write(90); delay(1000);
@@ -86,7 +88,7 @@ void loop() {
   // Alerte si erreur
   if (isnan(t)) {
     digitalWrite(LED_ALARM_RED_PIN, HIGH);
-    Serial.println("ALERT: SHT31 Data Error!");
+    Serial.println("ALERT: SHTC3 Data Error!");
   } else {
     digitalWrite(LED_ALARM_RED_PIN, LOW);
   }

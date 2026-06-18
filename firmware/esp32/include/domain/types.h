@@ -64,8 +64,11 @@ struct SorbentDecision {
 
 struct OutputFrame {
   bool vcrc_relay_on = false;
+  bool heater_relay_on = false;
   bool pump_relay_on = false;
   bool fans_relay_on = false;
+  int sorbent_fan_1_pwm = 0;
+  int sorbent_fan_2_pwm = 0;
   int servo_angle_deg = 0;
 };
 

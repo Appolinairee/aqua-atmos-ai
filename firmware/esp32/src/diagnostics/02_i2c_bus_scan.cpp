@@ -24,7 +24,7 @@ void loop() {
     if (error == 0) {
       Serial.printf("Device found at 0x%02X ", address);
       if (address == 0x27) Serial.print("(LCD)");
-      if (address == 0x44) Serial.print("(SHT31 Ambiant)");
+      if (address == 0x70) Serial.print("(SHTC3 Ambiant)");
       Serial.println();
       devices++;
     }

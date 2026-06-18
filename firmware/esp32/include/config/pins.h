@@ -16,15 +16,15 @@ constexpr int FLOW_METER_PIN = 14;
 
 // Gestion de l'Eau
 constexpr int FLOAT_SWITCH_PIN = 32;
-constexpr int WATER_LEVEL_ANALOG_PIN = 33;
+constexpr int RESERVOIR_LEVEL_ADC_PIN = 33;
+constexpr int BATTERY_VOLTAGE_ADC_PIN = 34;
 
 // Actionneurs
 constexpr int VCRC_RELAY_PIN = 26;
 constexpr int HEATER_RELAY_PIN = 27;
-constexpr int VCRC_FAN_PWM_PIN = 25;
 constexpr int SORBENT_FAN_1_PWM_PIN = 12;
-constexpr int SORBENT_FAN_2_PWM_PIN = 13;
-constexpr int SORBENT_SERVO_PIN = 2; // Not conflicting with 14
+// constexpr int SORBENT_FAN_2_PWM_PIN = 13; // (Mise en parallele ou desactivee)
+constexpr int SORBENT_SERVO_PIN = 13; // 2 servos branches en parallele sur GPIO 13
 
 // LEDs de Diagnostic
 constexpr int LED_ALARM_RED_PIN = 15;

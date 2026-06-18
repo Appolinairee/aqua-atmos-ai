@@ -10,8 +10,9 @@ Servo myservo;
  */
 void setup() {
   Serial.begin(115200);
-  myservo.attach(aqua_atmos::config::LED_SORBENT_YELLOW_PIN); // Utilise la pin 23 du tableau
-  Serial.println("Servo test starting (0 -> 90 -> 140)");
+  myservo.attach(aqua_atmos::config::SORBENT_SERVO_PIN);
+  Serial.println("Test des 2 Servomoteurs (Broche 13 en parallèle)");
+  Serial.println("Mouvement : 0 (Fermé) -> 90 (Ouvert) -> 140 (Régénération)");
 }
 
 void loop() {
