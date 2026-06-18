@@ -12,6 +12,12 @@ constexpr float BATTERY_MAX_VOLTAGE = 12.7F;
 constexpr float BATTERY_MIN_VOLTAGE = 11.5F;
 constexpr float BATTERY_CRITICAL_SOC = 20.0F;
 
+// Thermodynamique
+constexpr float MAGNUS_A = 17.625F;
+constexpr float MAGNUS_B = 243.04F;
+constexpr float MOLAR_MASS_RATIO_WATER_AIR = 0.62198F;
+constexpr float STANDARD_PRESSURE_HPA = 1013.25F;
+
 // Seuils Thermiques
 constexpr float CONDENSER_MAX_TEMP_C = 60.0F;
 

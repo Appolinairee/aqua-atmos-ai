@@ -14,7 +14,6 @@ inline domain::VcrcDecision decide_vcrc(
   domain::VcrcDecision decision;
   if (hard_block) return decision;
 
-  // Hystérésis : Seuil bas si déjà allumé, sinon seuil standard
   float hr_threshold = current_state ? (config::VCRC_MIN_HR_PCT - config::VCRC_HYSTERESIS_PCT) 
                                      : config::VCRC_MIN_HR_PCT;
 
@@ -22,10 +21,6 @@ inline domain::VcrcDecision decide_vcrc(
                     d.dew_point_c > config::VCRC_MIN_DEW_POINT_C && 
                     d.humidity_ratio_gkg >= config::VCRC_MIN_HUM_RATIO_GKG);
   return decision;
-}
-
-inline domain::VcrcDecision decide_vcrc(const domain::SensorFrame& s, const domain::DerivedFrame& d) {
-  return decide_vcrc(s, d, is_hard_block(s), false);
 }
 
 inline domain::SorbentDecision decide_sorbent(
@@ -49,51 +44,43 @@ inline domain::SorbentDecision decide_sorbent(
   return decision;
 }
 
-inline domain::SorbentDecision decide_sorbent(const domain::SensorFrame& s, const domain::DerivedFrame& d) {
-  return decide_sorbent(s, d, is_hard_block(s));
-}
-
 inline void fuse_decisions(
-    const domain::VcrcDecision& rule_vcrc,
-    const domain::SorbentDecision& rule_sorbent,
-    const domain::VcrcDecision& inference_vcrc,
-    const domain::SorbentDecision& inference_sorbent,
+    const domain::VcrcDecision& rule_v,
+    const domain::SorbentDecision& rule_s,
+    const domain::VcrcDecision& ml_v,
+    const domain::SorbentDecision& ml_s,
     bool hard_block,
-    domain::VcrcDecision& fused_vcrc,
-    domain::SorbentDecision& fused_sorbent) {
-  fused_vcrc = domain::VcrcDecision();
-  fused_sorbent = domain::SorbentDecision();
+    domain::VcrcDecision& fused_v,
+    domain::SorbentDecision& fused_s) {
+  
+  if (hard_block) {
+    fused_v.state = false;
+    fused_s.mode = domain::SorbentDecision::Mode::Veille;
+    fused_s.heater_on = false;
+    return;
+  }
 
-  if (hard_block) return;
-
-  fused_vcrc.state = rule_vcrc.state && inference_vcrc.state;
-  fused_sorbent.mode = rule_sorbent.mode;
-  fused_sorbent.heater_on = rule_sorbent.heater_on &&
-                            inference_sorbent.heater_on &&
-                            rule_sorbent.mode == domain::SorbentDecision::Mode::Regeneration &&
-                            inference_sorbent.mode == domain::SorbentDecision::Mode::Regeneration;
+  fused_v.state = rule_v.state && ml_v.state;
+  fused_s.mode = rule_s.mode;
+  fused_s.heater_on = rule_s.heater_on && ml_s.heater_on;
 }
 
-/**
- * @brief Traduit les décisions logiques en consignes physiques (PWM, angles).
- */
 inline domain::OutputFrame build_outputs(const domain::VcrcDecision& vcrc, const domain::SorbentDecision& sorb) {
   domain::OutputFrame out;
   out.vcrc_relay_on = vcrc.state;
-  out.heater_relay_on = sorb.heater_on;
-  out.vcrc_fan_pwm = vcrc.state ? 200 : 0;
+  out.pump_relay_on = sorb.heater_on;
+  
+  // Les ventilateurs ne tournent qu'en mode Absorption
+  out.fans_relay_on = (sorb.mode == domain::SorbentDecision::Mode::Absorption);
 
   switch (sorb.mode) {
     case domain::SorbentDecision::Mode::Absorption:
-      out.sorbent_fan_pwm = 160;
       out.servo_angle_deg = 90;
       break;
     case domain::SorbentDecision::Mode::Regeneration:
-      out.sorbent_fan_pwm = 220;
-      out.servo_angle_deg = 140;
+      out.servo_angle_deg = 0;
       break;
     default:
-      out.sorbent_fan_pwm = 0;
       out.servo_angle_deg = 0;
       break;
   }

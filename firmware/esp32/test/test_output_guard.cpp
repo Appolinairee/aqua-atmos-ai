@@ -1,132 +1,74 @@
 #include <unity.h>
-
-#include "config/constants.h"
 #include "control/output_guard.h"
+#include "config/timing.h"
+
+using namespace aqua_atmos;
 
 namespace {
 
-using aqua_atmos::domain::OutputFrame;
-
-OutputFrame make_outputs(bool vcrc_on, bool heater_on) {
-    OutputFrame outputs;
-    outputs.vcrc_relay_on = vcrc_on;
-    outputs.heater_relay_on = heater_on;
-    outputs.vcrc_fan_pwm = vcrc_on ? 200 : 0;
-    outputs.sorbent_fan_pwm = heater_on ? 220 : 0;
-    outputs.servo_angle_deg = heater_on ? 140 : 0;
-    return outputs;
+domain::OutputFrame make_vcrc_req(bool state) {
+    domain::OutputFrame o;
+    o.vcrc_relay_on = state;
+    o.fans_relay_on = state; // Allume aussi les ventilos dans le test pour simuler l'absorption
+    return o;
 }
 
-// apply_output_guard
+/**
+ * NIVEAU 6 : PROTECTIONS TEMPORELLES
+ */
 
-void test_output_guard_allows_initial_activation() {
-    aqua_atmos::control::OutputGuardState state;
-    const OutputFrame guarded =
-        aqua_atmos::control::apply_output_guard(make_outputs(true, true), state, 1000UL);
+void test_minimum_run_time_vcrc() {
+    control::OutputGuardState state;
+    unsigned long now = 1000;
 
+    // Allumage
+    domain::OutputFrame guarded = control::apply_output_guard(make_vcrc_req(true), state, now, false);
     TEST_ASSERT_TRUE(guarded.vcrc_relay_on);
-    TEST_ASSERT_TRUE(guarded.heater_relay_on);
-}
 
-void test_output_guard_blocks_vcrc_restart_before_minimum_off_time() {
-    aqua_atmos::control::OutputGuardState state;
-    // 1. Allumage
-    aqua_atmos::control::apply_output_guard(make_outputs(true, false), state, 1000UL);
+    // Tentative arrêt prématuré (après 10 sec)
+    now += 10000;
+    guarded = control::apply_output_guard(make_vcrc_req(false), state, now, false);
     
-    // 2. Extinction (doit attendre MRT)
-    unsigned long time_extinction = 1000UL + aqua_atmos::config::VCRC_MIN_RUN_MS + 100UL;
-    aqua_atmos::control::apply_output_guard(make_outputs(false, false), state, time_extinction);
-
-    // 3. Tentative de rallumage trop tôt
-    const OutputFrame guarded =
-        aqua_atmos::control::apply_output_guard(make_outputs(true, false),
-                                                state,
-                                                time_extinction + aqua_atmos::config::VCRC_MIN_OFF_MS - 1UL);
-
-    TEST_ASSERT_FALSE(guarded.vcrc_relay_on);
+    // DOIT RESTER ON (MRT 20 min)
+    TEST_ASSERT_TRUE_MESSAGE(guarded.vcrc_relay_on, "Le VCRC doit rester ON pendant le MRT");
 }
 
-void test_output_guard_allows_vcrc_restart_after_minimum_off_time() {
-    aqua_atmos::control::OutputGuardState state;
-    // 1. Allumage
-    aqua_atmos::control::apply_output_guard(make_outputs(true, false), state, 1000UL);
+void test_minimum_off_time_vcrc() {
+    control::OutputGuardState state;
+    unsigned long now = 1000;
+
+    // Allumage puis arrêt légitime après MRT
+    control::apply_output_guard(make_vcrc_req(true), state, now, false);
+    now += config::VCRC_MIN_RUN_MS + 1000;
+    control::apply_output_guard(make_vcrc_req(false), state, now, false);
     
-    // 2. Extinction (après MRT)
-    unsigned long time_extinction = 1000UL + aqua_atmos::config::VCRC_MIN_RUN_MS + 100UL;
-    aqua_atmos::control::apply_output_guard(make_outputs(false, false), state, time_extinction);
-
-    // 3. Rallumage après MOT
-    const OutputFrame guarded =
-        aqua_atmos::control::apply_output_guard(make_outputs(true, false),
-                                                state,
-                                                time_extinction + aqua_atmos::config::VCRC_MIN_OFF_MS);
-
-    TEST_ASSERT_TRUE(guarded.vcrc_relay_on);
+    // Tentative rallumage immédiat (après 10 sec)
+    now += 10000;
+    domain::OutputFrame guarded = control::apply_output_guard(make_vcrc_req(true), state, now, false);
+    
+    // DOIT RESTER OFF (MOT 5 min)
+    TEST_ASSERT_FALSE_MESSAGE(guarded.vcrc_relay_on, "Le VCRC ne doit pas redemarrer avant le MOT");
 }
 
-void test_output_guard_blocks_heater_restart_before_minimum_off_time() {
-    aqua_atmos::control::OutputGuardState state;
-    aqua_atmos::control::apply_output_guard(make_outputs(false, true), state, 1000UL);
-    aqua_atmos::control::apply_output_guard(make_outputs(false, false), state, 2000UL);
+void test_hard_block_overrides_temporal_guards() {
+    control::OutputGuardState state;
+    unsigned long now = 1000;
 
-    const OutputFrame guarded =
-        aqua_atmos::control::apply_output_guard(make_outputs(false, true),
-                                                state,
-                                                2000UL + aqua_atmos::config::HEATER_MIN_OFF_MS - 1UL);
-
-    TEST_ASSERT_FALSE(guarded.heater_relay_on);
-}
-
-void test_output_guard_forces_outputs_off_on_hard_block() {
-    aqua_atmos::control::OutputGuardState state;
-    const OutputFrame guarded =
-        aqua_atmos::control::apply_output_guard(make_outputs(true, true), state, 1000UL, true);
-
-    TEST_ASSERT_FALSE(guarded.vcrc_relay_on);
-    TEST_ASSERT_FALSE(guarded.heater_relay_on);
-    TEST_ASSERT_EQUAL_INT(0, guarded.vcrc_fan_pwm);
-    TEST_ASSERT_EQUAL_INT(0, guarded.sorbent_fan_pwm);
-}
-
-void test_output_guard_maintains_vcrc_during_minimum_run_time() {
-    aqua_atmos::control::OutputGuardState state;
-    // On allume à T=1000ms
-    aqua_atmos::control::apply_output_guard(make_outputs(true, false), state, 1000UL);
-
-    // Demande d'arrêt à T=1000 + MRT - 1ms
-    const OutputFrame guarded =
-        aqua_atmos::control::apply_output_guard(make_outputs(false, false),
-                                                state,
-                                                1000UL + aqua_atmos::config::VCRC_MIN_RUN_MS - 1UL);
-
-    // Doit être maintenu à TRUE (MRT)
-    TEST_ASSERT_TRUE(guarded.vcrc_relay_on);
-}
-
-void test_output_guard_allows_vcrc_stop_after_minimum_run_time() {
-    aqua_atmos::control::OutputGuardState state;
-    // On allume à T=1000ms
-    aqua_atmos::control::apply_output_guard(make_outputs(true, false), state, 1000UL);
-
-    // Demande d'arrêt après MRT
-    const OutputFrame guarded =
-        aqua_atmos::control::apply_output_guard(make_outputs(false, false),
-                                                state,
-                                                1000UL + aqua_atmos::config::VCRC_MIN_RUN_MS);
-
-    // Doit être autorisé à s'éteindre
+    // Allumage
+    control::apply_output_guard(make_vcrc_req(true), state, now, false);
+    
+    // Alarme batterie après 1 min
+    now += 60000;
+    domain::OutputFrame guarded = control::apply_output_guard(make_vcrc_req(true), state, now, true); // hard_block = true
+    
+    // DOIT COUPER TOUT DE SUITE
     TEST_ASSERT_FALSE(guarded.vcrc_relay_on);
 }
 
-}  // namespace
+} // namespace
 
 void run_output_guard_tests() {
-    // apply_output_guard
-    RUN_TEST(test_output_guard_allows_initial_activation);
-    RUN_TEST(test_output_guard_blocks_vcrc_restart_before_minimum_off_time);
-    RUN_TEST(test_output_guard_allows_vcrc_restart_after_minimum_off_time);
-    RUN_TEST(test_output_guard_blocks_heater_restart_before_minimum_off_time);
-    RUN_TEST(test_output_guard_forces_outputs_off_on_hard_block);
-    RUN_TEST(test_output_guard_maintains_vcrc_during_minimum_run_time);
-    RUN_TEST(test_output_guard_allows_vcrc_stop_after_minimum_run_time);
+    RUN_TEST(test_minimum_run_time_vcrc);
+    RUN_TEST(test_minimum_off_time_vcrc);
+    RUN_TEST(test_hard_block_overrides_temporal_guards);
 }

@@ -2,33 +2,37 @@
 
 /**
  * @file types.h
- * @brief Définitions des structures de données transverses.
+ * @brief Structures de données universelles (Hardware + IA).
  */
 
 namespace aqua_atmos::domain {
 
-/**
- * @struct SensorFrame
- * @brief Données brutes issues des capteurs.
- */
 struct SensorFrame {
+  // Ambiance (SHT31)
   float temp_air_c = 0.0F;
   float hr_pct = 0.0F;
   float hr_in_pct = 0.0F;
+
+  // Sorbant & Évaporateur (DHT22 / DHT11)
   float hr_out_pct = 0.0F;
-  float temp_cond_c = 0.0F;
+  float temp_cond_c = 0.0F; 
+  
+  // Interne & Technique
+  float temp_sorbent_internal_c = 0.0F;
   float temp_collector_c = 0.0F;
-  float solar_wm2 = 0.0F;
-  float pv_voltage = 0.0F;
+  float water_flow_ml_min = 0.0F;
+  
+  // Énergie & Niveaux
   float soc_battery_pct = 0.0F;
   float reservoir_level_pct = 0.0F;
+  bool float_switch_active = false; 
+  
+  // Contexte
+  float solar_wm2 = 0.0F;
+  float pv_voltage = 0.0F;
   int hour_of_day = 0;
 };
 
-/**
- * @struct DerivedFrame
- * @brief Variables calculées pour la décision IA/Règles.
- */
 struct DerivedFrame {
   float dew_point_c = 0.0F;
   float humidity_ratio_gkg = 0.0F;
@@ -38,8 +42,10 @@ struct DerivedFrame {
   float hour_cos = 0.0F;
   float day_sin = 0.0F;
   float day_cos = 1.0F;
-  float thermal_lift_c = 0.0F;
-  float collector_gain_c = 0.0F;
+  
+  float thermal_lift_c = 0.0F;   
+  float collector_gain_c = 0.0F; 
+  
   int is_daylight = 0;
   int high_humidity_flag = 0;
   int battery_stress_flag = 0;
@@ -53,19 +59,14 @@ struct VcrcDecision {
 struct SorbentDecision {
   enum class Mode { Veille, Absorption, Regeneration };
   Mode mode = Mode::Veille;
-  bool heater_on = false;
+  bool heater_on = false; 
 };
 
-/**
- * @struct OutputFrame
- * @brief Consignes unifiées pour les actionneurs.
- */
 struct OutputFrame {
   bool vcrc_relay_on = false;
-  bool heater_relay_on = false;
-  int vcrc_fan_pwm = 0;    // 0-255
-  int sorbent_fan_pwm = 0; // 0-255, applied to both sorbent fans
-  int servo_angle_deg = 0; // 0-180
+  bool pump_relay_on = false;
+  bool fans_relay_on = false;
+  int servo_angle_deg = 0;
 };
 
 }  // namespace aqua_atmos::domain

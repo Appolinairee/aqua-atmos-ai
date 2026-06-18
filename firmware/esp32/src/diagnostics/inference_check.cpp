@@ -32,8 +32,8 @@ void loop() {
   domain::enrich_derived_frame(sensors, derived);
 
   // 3. Calcul par les règles métier
-  domain::VcrcDecision vcrc_rule = control::decide_vcrc(sensors, derived);
-  domain::SorbentDecision sorb_rule = control::decide_sorbent(sensors, derived);
+  domain::VcrcDecision vcrc_rule = control::decide_vcrc(sensors, derived, false, false);
+  domain::SorbentDecision sorb_rule = control::decide_sorbent(sensors, derived, false);
 
   // 4. Calcul par l'IA (Inférence temps réel)
   domain::VcrcDecision vcrc_ml;
