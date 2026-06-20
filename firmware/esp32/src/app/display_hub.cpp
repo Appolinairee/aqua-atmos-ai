@@ -3,42 +3,51 @@
 
 namespace aqua_atmos::app {
 
-void DisplayHub::begin() {
-  lcd_.init();
-  lcd_.backlight();
-  lcd_.clear();
-  lcd_.setCursor(0, 0);
-  lcd_.print("AQUA-ATMOS V1.0");
-  delay(1000);
+void DisplayHub::show(const char* l1, const char* l2) {
+  lcd_.setCursor(0, 0); lcd_.print(l1);
+  lcd_.setCursor(0, 1); lcd_.print(l2);
 }
 
-void DisplayHub::update(const domain::SensorFrame& sensors, const domain::VcrcDecision& vcrc, const domain::SorbentDecision& sorbent) {
-  if (millis() - last_update_ms_ < 3000) return;
+void DisplayHub::begin() {
+  lcd_.init(); lcd_.backlight(); lcd_.clear();
+  show("  AQUA WATER AI ", "  Initialisant..");
+  delay(2000);
+  lcd_.clear();
+  show("  AQUA WATER AI ", "  Systeme Pret! ");
+  delay(1000);
+  lcd_.clear();
+}
+
+void DisplayHub::update(
+    const domain::SensorFrame& s,
+    const domain::DerivedFrame& d,
+    const domain::VcrcDecision& vcrc,
+    const domain::SorbentDecision& sorb) {
+
+  if (millis() - last_update_ms_ < 4000) return;
   last_update_ms_ = millis();
 
-  lcd_.clear();
-  lcd_.setCursor(0, 0);
+  char l1[17], l2[17];
 
   switch (screen_index_) {
-    case 0: // Ambiance
-      lcd_.print("T:"); lcd_.print(sensors.temp_air_c, 1); lcd_.print("C ");
-      lcd_.print("HR:"); lcd_.print(sensors.hr_pct, 0); lcd_.print("%");
-      lcd_.setCursor(0, 1);
-      lcd_.print("Bat:"); lcd_.print(sensors.soc_battery_pct, 0); lcd_.print("% ");
-      lcd_.print("Res:"); lcd_.print(sensors.reservoir_level_pct, 0); lcd_.print("%");
+    case 0: {
+      snprintf(l1, 17, "T:%.1fC  HR:%.0f%% ", s.temp_air_c, s.hr_pct);
+      snprintf(l2, 17, "Rosee: %.1fC     ", d.dew_point_c);
       break;
-
-    case 1: // Etats
-      lcd_.print("VCRC:"); lcd_.print(vcrc.state ? "ON " : "OFF");
-      lcd_.setCursor(0, 1);
-      lcd_.print("Sorb:"); 
-      if (sorbent.mode == domain::SorbentDecision::Mode::Absorption) lcd_.print("ABS");
-      else if (sorbent.mode == domain::SorbentDecision::Mode::Regeneration) lcd_.print("REG");
-      else lcd_.print("OFF");
-      lcd_.print(" Heat:"); lcd_.print(sorbent.heater_on ? "ON" : "OFF");
+    }
+    case 1: {
+      const char* vcrc_str = vcrc.state ? "ACTIF" : "ARRETE";
+      const char* sorb_str =
+          (sorb.mode == domain::SorbentDecision::Mode::Absorption)  ? "ABSORP" :
+          (sorb.mode == domain::SorbentDecision::Mode::Regeneration) ? "REGEN"  : "VEILLE";
+      snprintf(l1, 17, "VCRC  : %-8s", vcrc_str);
+      snprintf(l2, 17, "Sorb  : %-8s", sorb_str);
       break;
+    }
   }
 
+  lcd_.clear();
+  show(l1, l2);
   screen_index_ = (screen_index_ + 1) % 2;
 }
 

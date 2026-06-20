@@ -61,14 +61,15 @@ void loop() {
   actuator_hub.apply(outputs, hard_block);
 
   // 7. IHM & Communication
-  display_hub.update(sensors, vcrc_decision, sorb_decision);
+  display_hub.update(sensors, derived, vcrc_decision, sorb_decision);
   wifi_hub.handle(sensors, vcrc_decision, sorb_decision);
   
   static unsigned long last_log = 0;
   if (millis() - last_log > 2000) {
     last_log = millis();
-    Serial.printf("T:%.1f HR:%.1f | VCRC:%d SORB:%d\n", 
-      sensors.temp_air_c, sensors.hr_pct, 
+    Serial.printf("[SHT:%s] T:%.1f HR:%.1f | VCRC:%d SORB:%d\n",
+      sensor_hub.hasSht() ? "OK" : "FB",
+      sensors.temp_air_c, sensors.hr_pct,
       outputs.vcrc_relay_on, (int)sorb_decision.mode);
   }
 

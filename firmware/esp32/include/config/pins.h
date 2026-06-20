@@ -7,7 +7,7 @@ constexpr int I2C_SDA_PIN = 21;
 constexpr int I2C_SCL_PIN = 22;
 
 // Capteurs T/H Unifilaires
-constexpr int DHT22_SORBENT_PIN = 19;
+constexpr int DHT22_SORBENT_PIN = 5;
 constexpr int DHT11_EVAPORATOR_PIN = 18;
 constexpr int NTC_10K_ANALOG_PIN = 35;
 
@@ -21,8 +21,8 @@ constexpr int BATTERY_VOLTAGE_ADC_PIN = 34;
 
 // Actionneurs
 constexpr int VCRC_RELAY_PIN = 26;
-constexpr int HEATER_RELAY_PIN = 27;
-constexpr int SORBENT_FAN_1_PWM_PIN = 12;
+constexpr int HEATER_RELAY_PIN = 4;
+constexpr int SORBENT_FAN_1_PWM_PIN = 25;
 // constexpr int SORBENT_FAN_2_PWM_PIN = 13; // (Mise en parallele ou desactivee)
 constexpr int SORBENT_SERVO_PIN = 13; // 2 servos branches en parallele sur GPIO 13
 

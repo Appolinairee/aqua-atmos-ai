@@ -53,7 +53,7 @@ void loop() {
   }
 
   // On peut réutiliser la structure de l'écran pour afficher la comparaison
-  display_hub.update(sensors, vcrc_ml, sorb_ml); // Affiche ce que l'IA propose
+  display_hub.update(sensors, derived, vcrc_ml, sorb_ml);
 
   delay(200); 
 }
