@@ -10,6 +10,7 @@ void DisplayHub::show(const char* l1, const char* l2) {
 
 void DisplayHub::begin() {
   lcd_.init(); lcd_.backlight(); lcd_.clear();
+  Serial.println("[LCD] init OK addr:0x27");
   show("  AQUA WATER AI ", "  Initialisant..");
   delay(2000);
   lcd_.clear();
@@ -46,8 +47,13 @@ void DisplayHub::update(
     }
   }
 
-  lcd_.clear();
-  show(l1, l2);
+  if (strcmp(l1, last_l1_) != 0 || strcmp(l2, last_l2_) != 0) {
+    lcd_.clear();
+    show(l1, l2);
+    strncpy(last_l1_, l1, 17);
+    strncpy(last_l2_, l2, 17);
+  }
+  Serial.printf("[LCD] page%d | L1:'%s' L2:'%s'\n", screen_index_, l1, l2);
   screen_index_ = (screen_index_ + 1) % 2;
 }
 

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aqua Atmos</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --accent:   #0ea5e9;
+      --accent2:  #0284c7;
+      --bg:       #f0f4f8;
+      --surface:  #ffffff;
+      --border:   #e2e8f0;
+      --text:     #0f172a;
+      --muted:    #64748b;
+      --green:    #10b981;
+      --red:      #ef4444;
+      --orange:   #f59e0b;
+      --sidebar:  60px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── SIDEBAR ── */
+    aside {
+      width: var(--sidebar);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 0;
+      gap: 8px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .logo-circle {
+      width: 38px; height: 38px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 12px;
+    }
+    .logo-circle svg { width: 20px; height: 20px; fill: white; }
+    .nav-btn {
+      position: relative;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+      color: var(--muted);
+    }
+    .nav-btn:hover { background: #e0f2fe; color: var(--accent); }
+    .nav-btn.active { background: var(--accent); color: white; }
+    .nav-btn svg { width: 18px; height: 18px; }
+    .nav-btn .tip {
+      display: none;
+      position: absolute;
+      left: 52px; top: 50%;
+      transform: translateY(-50%);
+      background: var(--text);
+      color: white;
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .nav-btn:hover .tip { display: block; }
+    .spacer { flex: 1; }
+    .conn-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-bottom: 8px;
+      transition: background 0.3s;
+    }
+    .conn-dot.off { background: var(--red); }
+
+    /* ── MAIN ── */
+    main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── HEADER ── */
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .top-bar h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.06em; color: var(--accent2); }
+    .top-bar .sub { font-size: 0.75rem; color: var(--muted); }
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 600;
+      background: #f1f5f9; color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .pill.on  { background: #ecfdf5; color: var(--green);  border-color: #a7f3d0; }
+    .pill.warn{ background: #fffbeb; color: var(--orange); border-color: #fde68a; }
+    .pill.off { background: #fef2f2; color: var(--red);    border-color: #fecaca; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    /* ── SECTION ── */
+    section { display: none; flex-direction: column; gap: 20px; }
+    section.active { display: flex; }
+
+    /* ── CARDS GRID ── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 20px 18px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .card .lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .card .val { font-size: 2.2rem; font-weight: 700; line-height: 1; color: var(--text); }
+    .card .unit { font-size: 0.85rem; font-weight: 400; color: var(--muted); margin-left: 3px; }
+    .card .trend { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+    .card.accent { border-left: 3px solid var(--accent); }
+    .card.green  { border-left: 3px solid var(--green); }
+    .card.orange { border-left: 3px solid var(--orange); }
+
+    /* ── GAUGE ── */
+    .gauge-wrap { display: flex; align-items: center; justify-content: center; margin: 8px 0 4px; }
+    .gauge-wrap canvas { width: 100px !important; height: 100px !important; }
+
+    /* ── STATUS CARDS ── */
+    .status-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+      display: flex; align-items: center; gap: 14px;
+    }
+    .status-icon {
+      width: 42px; height: 42px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.1rem;
+    }
+    .status-icon.blue   { background: #e0f2fe; }
+    .status-icon.green  { background: #ecfdf5; }
+    .status-icon.orange { background: #fffbeb; }
+    .status-card .info .name  { font-weight: 600; font-size: 0.9rem; }
+    .status-card .info .state { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── CHART ── */
+    .chart-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .chart-card h3 { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+    .chart-card canvas { max-height: 200px; }
+
+    /* ── COMMANDS ── */
+    .cmd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .cmd-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .cmd-card h3 { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; font-weight: 600; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn {
+      padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border);
+      font-size: 0.8rem; font-weight: 500; cursor: pointer;
+      background: #f8fafc; color: var(--text);
+      transition: all 0.15s;
+    }
+    .btn:hover { background: #e0f2fe; border-color: var(--accent); color: var(--accent2); }
+    .btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    .btn.primary:hover { background: var(--accent2); }
+    .btn.danger { background: #fef2f2; color: var(--red); border-color: #fecaca; }
+    .btn.danger:hover { background: #fee2e2; }
+    .cmd-feedback { font-size: 0.75rem; color: var(--green); margin-top: 12px; height: 18px; }
+
+    /* ── TIMESTAMP ── */
+    .ts-bar { text-align: center; font-size: 0.7rem; color: #94a3b8; margin-top: auto; padding-top: 8px; }
+  </style>
+</head>
+<body x-data="aqua()" x-init="init()">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="logo-circle">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8 7 4 10 4 14a8 8 0 0016 0c0-4-4-7-8-12z"/></svg>
+    </div>
+
+    <button class="nav-btn" :class="{ active: page==='monitor' }" @click="page='monitor'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span class="tip">Monitoring</span>
+    </button>
+
+    <button class="nav-btn" :class="{ active: page==='commandes' }" @click="page='commandes'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      <span class="tip">Commandes</span>
+    </button>
+
+    <button class="nav-btn" :class="{ active: page==='historique' }" @click="page='historique'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span class="tip">Historique</span>
+    </button>
+
+    <div class="spacer"></div>
+    <div class="conn-dot" :class="{ off: !connected }" :title="connected ? 'ESP32 connecté' : 'ESP32 hors ligne'"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div>
+        <h1>AQUA ATMOS</h1>
+        <div class="sub" x-text="timestamp || 'Connexion...'"></div>
+      </div>
+      <div class="pill-row">
+        <span class="pill" :class="vcrc_active ? 'on' : 'off'">
+          <span class="dot"></span>
+          VCRC <span x-text="vcrc_active ? 'ACTIF' : 'ARRÊTÉ'"></span>
+        </span>
+        <span class="pill" :class="sorbent_mode === 'ABSORPTION' ? 'on' : sorbent_mode === 'REGEN' ? 'warn' : 'off'">
+          <span class="dot"></span>
+          <span x-text="sorbent_mode || 'VEILLE'"></span>
+        </span>
+        <span class="pill">
+          <span x-text="'H ' + (hour !== null ? String(hour).padStart(2,'0') + ':00' : '--')"></span>
+        </span>
+      </div>
+    </div>
+
+    <!-- MONITORING -->
+    <section :class="{ active: page==='monitor' }">
+      <div class="cards">
+        <div class="card accent">
+          <div class="lbl">Température</div>
+          <div class="val"><span x-text="temp !== null ? temp.toFixed(1) : '--'"></span><span class="unit">°C</span></div>
+          <div class="trend">Air ambiant</div>
+        </div>
+        <div class="card accent">
+          <div class="lbl">Humidité</div>
+          <div class="val"><span x-text="hum !== null ? hum.toFixed(0) : '--'"></span><span class="unit">%</span></div>
+          <div class="trend">Relative ambiante</div>
+        </div>
+        <div class="card green">
+          <div class="lbl">Point de rosée</div>
+          <div class="val"><span x-text="dew !== null ? dew.toFixed(1) : '--'"></span><span class="unit">°C</span></div>
+          <div class="trend">Condensation cible</div>
+        </div>
+        <div class="card green">
+          <div class="lbl">Débit eau</div>
+          <div class="val"><span x-text="flow !== null ? flow.toFixed(2) : '--'"></span><span class="unit">L/min</span></div>
+          <div class="trend">Débitmètre GPIO14</div>
+        </div>
+        <div class="card orange">
+          <div class="lbl">Batterie</div>
+          <div class="val"><span x-text="battery !== null ? battery.toFixed(0) : '--'"></span><span class="unit">%</span></div>
+          <div class="trend">SOC estimé</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+        <div class="status-card">
+          <div class="status-icon blue">⚡</div>
+          <div class="info">
+            <div class="name">VCRC — Compresseur</div>
+            <div class="state" :style="{ color: vcrc_active ? 'var(--green)' : 'var(--red)' }" x-text="vcrc_active ? '● Actif' : '● Arrêté'"></div>
+          </div>
+        </div>
+        <div class="status-card">
+          <div class="status-icon green">🌀</div>
+          <div class="info">
+            <div class="name">Sorbant</div>
+            <div class="state"
+              :style="{ color: sorbent_mode==='ABSORPTION' ? 'var(--green)' : sorbent_mode==='REGEN' ? 'var(--orange)' : 'var(--muted)' }"
+              x-text="'● ' + (sorbent_mode || 'VEILLE')">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMMANDES -->
+    <section :class="{ active: page==='commandes' }">
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <h3>VCRC — Compresseur</h3>
+          <div class="btn-row">
+            <button class="btn primary" @click="cmd('vcrc_override','true')">Forcer ON</button>
+            <button class="btn" @click="cmd('vcrc_override','false')">Forcer OFF</button>
+            <button class="btn" @click="cmd('vcrc_auto')">Auto</button>
+          </div>
+        </div>
+        <div class="cmd-card">
+          <h3>Sorbant</h3>
+          <div class="btn-row">
+            <button class="btn primary" @click="cmd('sorb_mode','ABSORPTION')">Absorption</button>
+            <button class="btn" @click="cmd('sorb_mode','REGEN')">Régén.</button>
+            <button class="btn" @click="cmd('sorb_mode','VEILLE')">Veille</button>
+            <button class="btn" @click="cmd('sorb_auto')">Auto</button>
+          </div>
+        </div>
+        <div class="cmd-card">
+          <h3>Chauffage sorbant</h3>
+          <div class="btn-row">
+            <button class="btn primary" @click="cmd('heater','true')">ON</button>
+            <button class="btn" @click="cmd('heater','false')">OFF</button>
+            <button class="btn" @click="cmd('heater_auto')">Auto</button>
+          </div>
+        </div>
+        <div class="cmd-card">
+          <h3>Système</h3>
+          <div class="btn-row">
+            <button class="btn danger" @click="if(confirm('Redémarrer ESP32 ?')) cmd('reset')">Redémarrer ESP32</button>
+          </div>
+        </div>
+      </div>
+      <div class="cmd-feedback" x-text="feedback"></div>
+    </section>
+
+    <!-- HISTORIQUE -->
+    <section :class="{ active: page==='historique' }">
+      <div class="chart-card">
+        <h3>Température & Humidité</h3>
+        <canvas id="chartTH"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Débit eau (L/min)</h3>
+        <canvas id="chartFlow"></canvas>
+      </div>
+    </section>
+
+    <div class="ts-bar" x-text="connected ? 'Mis à jour ' + timestamp : 'ESP32 non joignable'"></div>
+  </main>
+
+  <script>
+    function aqua() {
+      return {
+        page: 'monitor',
+        connected: false,
+        timestamp: null,
+        temp: null, hum: null, battery: null,
+        flow: null, dew: null, hour: null,
+        vcrc_active: false, sorbent_mode: 'VEILLE',
+        feedback: '',
+        chartTH: null, chartFlow: null,
+
+        init() {
+          this.buildCharts();
+          this.refresh();
+          this.refreshHistory();
+          setInterval(() => this.refresh(), 2000);
+          setInterval(() => this.refreshHistory(), 15000);
+        },
+
+        async refresh() {
+          try {
+            const d = await fetch('/api/latest').then(r => r.json());
+            if (!d) return;
+            this.connected   = true;
+            this.timestamp   = d.timestamp;
+            this.temp        = d.temp_c;
+            this.hum         = d.humidity_pct;
+            this.battery     = d.battery_pct;
+            this.flow        = d.flow_lpm ?? 0;
+            if (d.temp_c != null && d.humidity_pct != null) {
+              const g = Math.log(d.humidity_pct / 100) + (17.625 * d.temp_c) / (243.04 + d.temp_c);
+              this.dew = 243.04 * g / (17.625 - g);
+            }
+            this.hour        = d.hour ?? null;
+            this.vcrc_active = d.vcrc_active;
+            this.sorbent_mode= d.sorbent_mode;
+          } catch {
+            this.connected = false;
+          }
+        },
+
+        async refreshHistory() {
+          try {
+            const rows = await fetch('/api/history').then(r => r.json());
+            const rev  = [...rows].reverse();
+            const labels = rev.map(r => r.timestamp.slice(11, 16));
+
+            this.chartTH.data.labels           = labels;
+            this.chartTH.data.datasets[0].data = rev.map(r => r.temp_c);
+            this.chartTH.data.datasets[1].data = rev.map(r => r.humidity_pct);
+            this.chartTH.update();
+
+            this.chartFlow.data.labels           = labels;
+            this.chartFlow.data.datasets[0].data = rev.map(r => r.flow_lpm ?? 0);
+            this.chartFlow.update();
+          } catch {}
+        },
+
+        async cmd(command, value) {
+          const body = { cmd: command };
+          if (value !== undefined) body.value = value;
+          try {
+            await fetch('/api/command', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body)
+            });
+            this.feedback = '✓ ' + command + (value ? ' → ' + value : '');
+            setTimeout(() => this.feedback = '', 3000);
+          } catch {
+            this.feedback = 'Erreur envoi commande';
+          }
+        },
+
+        buildCharts() {
+          const gridColor = '#e2e8f0';
+          const tickColor = '#94a3b8';
+          const base = {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#64748b', boxWidth: 12, font: { size: 11 } } } },
+            scales: {
+              x: { ticks: { color: tickColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+              y: { ticks: { color: tickColor, font: { size: 10 } }, grid: { color: gridColor } }
+            }
+          };
+          this.chartTH = new Chart(document.getElementById('chartTH'), {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [
+                { label: 'Temp (°C)',    data: [], borderColor: '#0ea5e9', backgroundColor: '#e0f2fe44', tension: 0.3, pointRadius: 0, fill: true },
+                { label: 'Humidité (%)', data: [], borderColor: '#10b981', backgroundColor: '#d1fae544', tension: 0.3, pointRadius: 0, fill: true }
+              ]
+            },
+            options: base
+          });
+          this.chartFlow = new Chart(document.getElementById('chartFlow'), {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [
+                { label: 'Débit (L/min)', data: [], borderColor: '#6366f1', backgroundColor: '#e0e7ff44', tension: 0.3, pointRadius: 0, fill: true }
+              ]
+            },
+            options: base
+          });
+        }
+      };
+    }
+  </script>
+</body>
+</html>

@@ -12,8 +12,6 @@ class ActuatorHub {
 
  private:
   Servo sorbent_servo_;
-  
-  const int ch_sorb1 = 1;
 };
 
 }

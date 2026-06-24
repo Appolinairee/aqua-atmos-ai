@@ -15,6 +15,8 @@ class DisplayHub {
   LiquidCrystal_I2C lcd_ = LiquidCrystal_I2C(0x27, 16, 2);
   unsigned long last_update_ms_ = 0;
   int screen_index_ = 0;
+  char last_l1_[17] = {};
+  char last_l2_[17] = {};
 };
 
 }  // namespace aqua_atmos::app

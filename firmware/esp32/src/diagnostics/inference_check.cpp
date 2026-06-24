@@ -46,10 +46,10 @@ void loop() {
   if (millis() - last_disp > 2000) {
     last_disp = millis();
     
-    Serial.printf("IA vs RULE | VCRC: %d/%d | SORB: %d/%d | HEAT: %d/%d\n",
+    Serial.printf("T:%.1fC HR:%.0f%% PtR:%.1fC | VCRC:%d/%d SORB:%d/%d\n",
+                  sensors.temp_air_c, sensors.hr_pct, derived.dew_point_c,
                   vcrc_ml.state, vcrc_rule.state,
-                  (int)sorb_ml.mode, (int)sorb_rule.mode,
-                  sorb_ml.heater_on, sorb_rule.heater_on);
+                  (int)sorb_ml.mode, (int)sorb_rule.mode);
   }
 
   // On peut réutiliser la structure de l'écran pour afficher la comparaison

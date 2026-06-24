@@ -10,8 +10,8 @@ void ActuatorHub::begin() {
   digitalWrite(config::VCRC_RELAY_PIN, LOW);
   digitalWrite(config::HEATER_RELAY_PIN, LOW);
 
-  ledcSetup(ch_sorb1, 5000, 8);
-  ledcAttachPin(config::SORBENT_FAN_1_PWM_PIN, ch_sorb1);
+  pinMode(config::SORBENT_FAN_1_PWM_PIN, OUTPUT);
+  digitalWrite(config::SORBENT_FAN_1_PWM_PIN, LOW);
 
   sorbent_servo_.attach(config::SORBENT_SERVO_PIN);
   sorbent_servo_.write(0);
@@ -23,16 +23,15 @@ void ActuatorHub::begin() {
 }
 
 void ActuatorHub::apply(const domain::OutputFrame& outputs, bool has_error) {
-  digitalWrite(config::VCRC_RELAY_PIN, outputs.vcrc_relay_on ? HIGH : LOW);
-  digitalWrite(config::HEATER_RELAY_PIN, outputs.heater_relay_on ? HIGH : LOW);
-
-  ledcWrite(ch_sorb1, outputs.sorbent_fan_1_pwm);
+  digitalWrite(config::VCRC_RELAY_PIN,          outputs.vcrc_relay_on   ? HIGH : LOW);
+  digitalWrite(config::HEATER_RELAY_PIN,        HIGH); // test: force pompe/heater ON
+  digitalWrite(config::SORBENT_FAN_1_PWM_PIN,   outputs.fans_relay_on  ? HIGH : LOW);
 
   sorbent_servo_.write(outputs.servo_angle_deg);
 
   digitalWrite(config::LED_ALARM_RED_PIN, has_error ? HIGH : LOW);
   digitalWrite(config::LED_VCRC_YELLOW_PIN, outputs.vcrc_relay_on ? HIGH : LOW);
-  const bool sorbent_active = outputs.sorbent_fan_1_pwm > 0;
+  const bool sorbent_active = outputs.fans_relay_on;
   digitalWrite(config::LED_SORBENT_BLUE_PIN, sorbent_active ? HIGH : LOW);
 
   bool active = outputs.vcrc_relay_on || sorbent_active;

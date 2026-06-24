@@ -1,0 +1,13 @@
+[Unit]
+Description=Aqua Water AI - Dashboard
+After=network.target
+
+[Service]
+WorkingDirectory=/home/pi/aqua-water-ai/app
+ExecStart=/usr/bin/python3 main.py
+Restart=always
+RestartSec=5
+User=pi
+
+[Install]
+WantedBy=multi-user.target

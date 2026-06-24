@@ -68,7 +68,7 @@ inline void fuse_decisions(
 inline domain::OutputFrame build_outputs(const domain::VcrcDecision& vcrc, const domain::SorbentDecision& sorb) {
   domain::OutputFrame out;
   out.vcrc_relay_on = vcrc.state;
-  out.pump_relay_on = sorb.heater_on;
+  out.heater_relay_on = sorb.heater_on;
   
   // Les ventilateurs ne tournent qu'en mode Absorption
   out.fans_relay_on = (sorb.mode == domain::SorbentDecision::Mode::Absorption);

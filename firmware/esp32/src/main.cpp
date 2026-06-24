@@ -53,6 +53,14 @@ void loop() {
   domain::VcrcDecision vcrc_decision;
   domain::SorbentDecision sorb_decision;
   control::fuse_decisions(vcrc_rule, sorb_rule, vcrc_inference, sorb_inference, hard_block, vcrc_decision, sorb_decision);
+
+  // 5b. Overrides manuels (Pi → ESP32)
+  const auto& ov = wifi_hub.overrides();
+  if (!hard_block) {
+    if (ov.vcrc_enabled)   vcrc_decision.state  = ov.vcrc_value;
+    if (ov.sorb_enabled)   sorb_decision.mode   = ov.sorb_value;
+    if (ov.heater_enabled) sorb_decision.heater_on = ov.heater_value;
+  }
   
   domain::OutputFrame requested_outputs = control::build_outputs(vcrc_decision, sorb_decision);
   domain::OutputFrame outputs = control::apply_output_guard(requested_outputs, output_guard_state, millis(), hard_block);
@@ -62,15 +70,46 @@ void loop() {
 
   // 7. IHM & Communication
   display_hub.update(sensors, derived, vcrc_decision, sorb_decision);
-  wifi_hub.handle(sensors, vcrc_decision, sorb_decision);
+  wifi_hub.handle(sensors, derived, vcrc_decision, sorb_decision);
   
   static unsigned long last_log = 0;
   if (millis() - last_log > 2000) {
     last_log = millis();
-    Serial.printf("[SHT:%s] T:%.1f HR:%.1f | VCRC:%d SORB:%d\n",
+
+    // [1] Capteurs bruts
+    Serial.printf("[SENS] SHT:%s T:%.1f HR:%.1f | DHT22:%s Tin:%.1f Hin:%.1f | DHT11:%s Hout:%.1f | NTC:%s Tcond:%.1f\n",
       sensor_hub.hasSht() ? "OK" : "FB",
       sensors.temp_air_c, sensors.hr_pct,
-      outputs.vcrc_relay_on, (int)sorb_decision.mode);
+      sensor_hub.lastDht22Ok() ? "OK" : "FB",
+      sensors.temp_sorbent_internal_c, sensors.hr_in_pct,
+      sensor_hub.lastDht11Ok() ? "OK" : "FB",
+      sensors.hr_out_pct,
+      sensor_hub.lastNtcOk() ? "OK" : "FB",
+      sensors.temp_cond_c);
+
+    // [2] Sécurité
+    Serial.printf("[SAFE] BLOCK:%d | reserv:%.0f%% batt:%.0f%% float:%d Tcond:%.1f\n",
+      hard_block,
+      sensors.reservoir_level_pct, sensors.soc_battery_pct,
+      sensors.float_switch_active, sensors.temp_cond_c);
+
+    // [3] Dérivés
+    Serial.printf("[DERIV] Tdp:%.1f w:%.2fg/kg dHR:%.1f daylight:%d\n",
+      derived.dew_point_c, derived.humidity_ratio_gkg,
+      derived.delta_hr_sorbent, derived.is_daylight);
+
+    // [4] Règles
+    Serial.printf("[RULE] VCRC:%d SORB:%d heat:%d\n",
+      vcrc_rule.state, (int)sorb_rule.mode, sorb_rule.heater_on);
+
+    // [5] IA
+    Serial.printf("[ML  ] VCRC:%d SORB:%d heat:%d\n",
+      vcrc_inference.state, (int)sorb_inference.mode, sorb_inference.heater_on);
+
+    // [6] Sorties finales
+    Serial.printf("[OUT ] VCRC:%d FAN:%d SERV:%d HEAT:%d\n---\n",
+      outputs.vcrc_relay_on, outputs.fans_relay_on,
+      outputs.servo_angle_deg, outputs.heater_relay_on);
   }
 
   delay(50);

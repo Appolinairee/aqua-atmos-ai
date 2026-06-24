@@ -62,6 +62,16 @@ struct SorbentDecision {
   bool heater_on = false; 
 };
 
+struct OverrideState {
+  bool vcrc_enabled   = false;
+  bool vcrc_value     = false;
+  bool sorb_enabled   = false;
+  SorbentDecision::Mode sorb_value = SorbentDecision::Mode::Veille;
+  bool heater_enabled = false;
+  bool heater_value   = false;
+  bool reset_request  = false;
+};
+
 struct OutputFrame {
   bool vcrc_relay_on = false;
   bool heater_relay_on = false;
