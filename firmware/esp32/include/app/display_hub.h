@@ -12,6 +12,8 @@ class DisplayHub {
 
  private:
   void show(const char* l1, const char* l2);
+  void show_blocks(uint8_t top_count, uint8_t bottom_count);
+  void boot_animation();
   LiquidCrystal_I2C lcd_ = LiquidCrystal_I2C(0x27, 16, 2);
   unsigned long last_update_ms_ = 0;
   int screen_index_ = 0;

@@ -1,10 +1,14 @@
+from pathlib import Path
+
 import requests
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 from core.database import Database
 import config
 
 app = Flask(__name__)
 _db: Database | None = None
+DESIGNS_DIR = Path(__file__).resolve().parents[2] / "designs"
+ASSETS_DIR = Path(__file__).resolve().parents[2] / "assets"
 
 
 def init(db: Database) -> None:
@@ -15,6 +19,16 @@ def init(db: Database) -> None:
 @app.get("/")
 def index():
     return render_template("index.html")
+
+
+@app.get("/designs/<path:filename>")
+def designs(filename: str):
+    return send_from_directory(DESIGNS_DIR, filename)
+
+
+@app.get("/assets/<path:filename>")
+def assets(filename: str):
+    return send_from_directory(ASSETS_DIR, filename)
 
 
 @app.get("/api/latest")

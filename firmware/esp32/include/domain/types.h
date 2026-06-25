@@ -8,6 +8,12 @@
 namespace aqua_atmos::domain {
 
 struct SensorFrame {
+  bool sht_ambient_ok = false;
+  bool dht22_sorbent_ok = false;
+  bool dht11_evap_ok = false;
+  bool ntc_ok = false;
+  bool rtc_ok = false;
+
   // Ambiance (SHT31)
   float temp_air_c = 0.0F;
   float hr_pct = 0.0F;

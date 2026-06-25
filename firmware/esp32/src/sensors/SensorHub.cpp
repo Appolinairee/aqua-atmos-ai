@@ -24,10 +24,10 @@ void SensorHub::begin() {
 
   Wire.setTimeOut(200);  // après rtc_.begin() qui reset Wire
 
-  for (int i = 0; i < 5 && !has_sht_ambient_; i++) {
-    has_sht_ambient_ = sht_ambient_.begin();
-    delay(100);
-  }
+  sht_ambient_.begin();
+  delay(100);
+  sensors_event_t hum_ev_init, tmp_ev_init;
+  has_sht_ambient_ = sht_ambient_.getEvent(&hum_ev_init, &tmp_ev_init);
 
   dht22_sorbent_.begin();
   dht11_evap_.begin();
@@ -76,8 +76,13 @@ domain::SensorFrame SensorHub::read() {
   static unsigned long sht_retry_at = 0;
 
   if (!has_sht_ambient_ && millis() > sht_retry_at) {
-    has_sht_ambient_ = sht_ambient_.begin(&Wire);
-    if (!has_sht_ambient_) sht_retry_at = millis() + 5000;
+    sht_ambient_.begin(&Wire);
+    sensors_event_t hum_ev_retry, tmp_ev_retry;
+    if (sht_ambient_.getEvent(&hum_ev_retry, &tmp_ev_retry)) {
+      has_sht_ambient_ = true;
+    } else {
+      sht_retry_at = millis() + 5000;
+    }
   }
 
   if (has_sht_ambient_) {
@@ -85,22 +90,26 @@ domain::SensorFrame SensorHub::read() {
     if (sht_ambient_.getEvent(&hum_ev, &tmp_ev)) {
       frame.temp_air_c = tmp_ev.temperature;
       frame.hr_pct     = hum_ev.relative_humidity;
+      frame.sht_ambient_ok = true;
       sht_fail_streak  = 0;
     } else {
       sht_fail_streak++;
       if (sht_fail_streak > 5) { has_sht_ambient_ = false; sht_retry_at = millis() + 5000; }
       frame.temp_air_c = config::FALLBACK_TEMP_AIR_C;
       frame.hr_pct     = config::FALLBACK_HR_PCT;
+      frame.sht_ambient_ok = false;
     }
   } else {
     frame.temp_air_c = config::FALLBACK_TEMP_AIR_C;
     frame.hr_pct     = config::FALLBACK_HR_PCT;
+    frame.sht_ambient_ok = false;
   }
 
   // --- 2. DHT22 sorbant ---
   float t_sorb = dht22_sorbent_.readTemperature();
   float h_sorb = dht22_sorbent_.readHumidity();
   last_dht22_ok_ = !isnan(t_sorb) && !isnan(h_sorb);
+  frame.dht22_sorbent_ok = last_dht22_ok_;
   frame.temp_sorbent_internal_c = last_dht22_ok_ ? t_sorb : frame.temp_air_c;
   frame.hr_in_pct               = last_dht22_ok_ ? h_sorb : frame.hr_pct;
 
@@ -108,10 +117,12 @@ domain::SensorFrame SensorHub::read() {
   float t_evap = dht11_evap_.readTemperature();
   float h_evap = dht11_evap_.readHumidity();
   last_dht11_ok_ = !isnan(t_evap) && !isnan(h_evap);
+  frame.dht11_evap_ok = last_dht11_ok_;
   frame.hr_out_pct = last_dht11_ok_ ? h_evap : (frame.hr_pct - 2.0f);
 
   // --- 4. NTC condenseur ---
   frame.temp_cond_c = read_ntc_temp_c();
+  frame.ntc_ok = last_ntc_ok_;
 
   // --- 5. Débitmètre ---
   frame.water_flow_ml_min = read_flow_lpm() * 1000.0f;
@@ -136,8 +147,10 @@ domain::SensorFrame SensorHub::read() {
   // --- 9. RTC ---
   if (has_rtc_) {
     frame.hour_of_day = rtc_.now().hour();
+    frame.rtc_ok = true;
   } else {
     frame.hour_of_day = config::FALLBACK_HOUR_OF_DAY;
+    frame.rtc_ok = false;
   }
 
   frame.temp_collector_c = frame.temp_air_c + 10.0f;

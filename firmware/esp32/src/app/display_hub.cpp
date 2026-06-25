@@ -8,15 +8,52 @@ void DisplayHub::show(const char* l1, const char* l2) {
   lcd_.setCursor(0, 1); lcd_.print(l2);
 }
 
+void DisplayHub::show_blocks(uint8_t top_count, uint8_t bottom_count) {
+  lcd_.clear();
+  lcd_.setCursor(0, 0);
+  for (uint8_t i = 0; i < 16; i++) lcd_.write(i < top_count ? byte(255) : ' ');
+  lcd_.setCursor(0, 1);
+  for (uint8_t i = 0; i < 16; i++) lcd_.write(i < bottom_count ? byte(255) : ' ');
+}
+
+void DisplayHub::boot_animation() {
+  for (uint8_t i = 0; i <= 16; i += 4) {
+    show_blocks(i, i);
+    delay(90);
+  }
+
+  const char* title = "   AQUA-ATMOS   ";
+  char line[17] = "                ";
+  for (uint8_t i = 0; i < 16; i++) {
+    line[i] = title[i];
+    lcd_.clear();
+    show(line, " ATMOS TO WATER ");
+    delay(55);
+  }
+
+  const char* bars[] = {
+    "[>             ]",
+    "[====>         ]",
+    "[========>     ]",
+    "[============> ]",
+    "[==============]"
+  };
+  for (uint8_t i = 0; i < 5; i++) {
+    lcd_.clear();
+    show("  SYSTEM SCAN  ", bars[i]);
+    delay(180);
+  }
+
+  lcd_.clear();
+  show("     READY     ", "   AUTO MODE    ");
+  delay(650);
+  lcd_.clear();
+}
+
 void DisplayHub::begin() {
   lcd_.init(); lcd_.backlight(); lcd_.clear();
   Serial.println("[LCD] init OK addr:0x27");
-  show("  AQUA WATER AI ", "  Initialisant..");
-  delay(2000);
-  lcd_.clear();
-  show("  AQUA WATER AI ", "  Systeme Pret! ");
-  delay(1000);
-  lcd_.clear();
+  boot_animation();
 }
 
 void DisplayHub::update(
@@ -32,17 +69,33 @@ void DisplayHub::update(
 
   switch (screen_index_) {
     case 0: {
-      snprintf(l1, 17, "T:%.1fC  HR:%.0f%% ", s.temp_air_c, s.hr_pct);
-      snprintf(l2, 17, "Rosee: %.1fC     ", d.dew_point_c);
+      const char* sorb_str =
+          (sorb.mode == domain::SorbentDecision::Mode::Absorption)   ? "SORB ON" :
+          (sorb.mode == domain::SorbentDecision::Mode::Regeneration) ? "REGEN"   : "SORB --";
+      snprintf(l1, 17, "MODE AUTO    OK ");
+      snprintf(l2, 17, "VCRC %-3s %-7s", vcrc.state ? "ON" : "OFF", sorb_str);
       break;
     }
     case 1: {
-      const char* vcrc_str = vcrc.state ? "ACTIF" : "ARRETE";
-      const char* sorb_str =
-          (sorb.mode == domain::SorbentDecision::Mode::Absorption)  ? "ABSORP" :
-          (sorb.mode == domain::SorbentDecision::Mode::Regeneration) ? "REGEN"  : "VEILLE";
-      snprintf(l1, 17, "VCRC  : %-8s", vcrc_str);
-      snprintf(l2, 17, "Sorb  : %-8s", sorb_str);
+      if (s.sht_ambient_ok) {
+        snprintf(l1, 17, "AIR: %4.1fC     ", s.temp_air_c);
+        snprintf(l2, 17, "HUM: %3.0f%%      ", s.hr_pct);
+      } else {
+        snprintf(l1, 17, "AIR: --.-C     ");
+        snprintf(l2, 17, "HUM: --%%       ");
+      }
+      break;
+    }
+    case 2: {
+      const float liters_hour = s.water_flow_ml_min * 0.06f;
+      char sensor_state[5];
+      sensor_state[0] = s.sht_ambient_ok ? 'S' : '-';
+      sensor_state[1] = s.dht22_sorbent_ok ? 'D' : '-';
+      sensor_state[2] = s.dht11_evap_ok ? 'E' : '-';
+      sensor_state[3] = s.ntc_ok ? 'N' : '-';
+      sensor_state[4] = '\0';
+      snprintf(l1, 17, "WATER:%4.1fL/h ", liters_hour);
+      snprintf(l2, 17, "R:%3.0f%% C:%s  ", s.reservoir_level_pct, sensor_state);
       break;
     }
   }
@@ -54,7 +107,7 @@ void DisplayHub::update(
     strncpy(last_l2_, l2, 17);
   }
   Serial.printf("[LCD] page%d | L1:'%s' L2:'%s'\n", screen_index_, l1, l2);
-  screen_index_ = (screen_index_ + 1) % 2;
+  screen_index_ = (screen_index_ + 1) % 3;
 }
 
 }  // namespace aqua_atmos::app
