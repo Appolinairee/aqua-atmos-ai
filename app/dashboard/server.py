@@ -7,6 +7,7 @@ import config
 
 app = Flask(__name__)
 _db: Database | None = None
+_command_state: dict = {}
 DESIGNS_DIR = Path(__file__).resolve().parents[2] / "designs"
 ASSETS_DIR = Path(__file__).resolve().parents[2] / "assets"
 
@@ -33,7 +34,10 @@ def assets(filename: str):
 
 @app.get("/api/latest")
 def api_latest():
-    return jsonify(_db.get_latest())
+    latest = _db.get_latest() if _db else None
+    if latest and _command_state:
+        latest = {**latest, **_command_state}
+    return jsonify(latest)
 
 
 @app.get("/api/history")
@@ -44,6 +48,13 @@ def api_history():
 @app.post("/api/command")
 def api_command():
     params = request.json or {}
+    cmd = params.get("cmd")
+    value = params.get("value")
+    if cmd == "vcrc_override":
+        _command_state["vcrc_active"] = value in (True, "true", "1", 1)
+    elif cmd == "sorb_mode":
+        _command_state["sorbent_mode"] = value
+
     try:
         r = requests.post(
             f"http://{config.ESP32_HOST}/api/command",
@@ -52,4 +63,16 @@ def api_command():
         )
         return jsonify(r.json()), r.status_code
     except Exception as e:
+        if config.ESP32_HOST != "localhost:8080":
+            try:
+                r = requests.post(
+                    "http://localhost:8080/api/command",
+                    params=params,
+                    timeout=1,
+                )
+                payload = r.json()
+                payload["fallback"] = "localhost:8080"
+                return jsonify(payload), r.status_code
+            except Exception:
+                pass
         return jsonify({"ok": False, "error": str(e)}), 503

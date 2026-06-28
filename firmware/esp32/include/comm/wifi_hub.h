@@ -29,6 +29,7 @@ class WifiHub {
 
   void setup_routing();
   void handle_root();
+  void handle_esp_local();
   void handle_not_found();
   void handle_command();
 

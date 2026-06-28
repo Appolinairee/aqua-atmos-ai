@@ -54,6 +54,7 @@ void WifiHub::begin() {
 
 void WifiHub::setup_routing() {
   server_.on("/", [this]() { handle_root(); });
+  server_.on("/esp", [this]() { handle_esp_local(); });
   server_.on("/generate_204", [this]() { handle_root(); }); // Android captive portal
   server_.on("/api/data", [this]() {
     server_.send(200, "application/json", get_json_data(last_sensors_, last_derived_, last_vcrc_, last_sorbent_));
@@ -73,14 +74,22 @@ void WifiHub::handle(const domain::SensorFrame& sensors, const domain::DerivedFr
 }
 
 void WifiHub::handle_root() {
+  // Redirection vers le dashboard Flask du Raspberry Pi (IP par défaut assignée au Pi: 192.168.4.2)
+  server_.sendHeader("Location", "http://192.168.4.2:5000/", true);
+  server_.send(302, "text/plain", "");
+}
+
+void WifiHub::handle_esp_local() {
+  // Page web locale d'origine pour le diagnostic direct
   server_.send(200, "text/html", WEB_PAGE);
 }
 
 void WifiHub::handle_not_found() {
   // Redirection automatique pour le portail captif
-  server_.sendHeader("Location", "/", true);
+  server_.sendHeader("Location", "http://192.168.4.2:5000/", true);
   server_.send(302, "text/plain", "");
 }
+
 
 void WifiHub::handle_command() {
   String body = server_.arg("plain");

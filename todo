@@ -1,0 +1,20 @@
+- controle manuel
+- voice pour l'accessibilité: plus naturelle et plus intéressante à entendre avec un style d'animation
+- script pour tout faire sur le rasberry pi
+- les pages restantes (historique, détails capteurs, paramètres, ...)
+
+
+Quand on change de langue, le changement doit pêtre automatique normalement,
+et celà doit s'applqiuer aux voices, le voice actuellement, tu utilises un synthétiseur le plus simple possible,
+mais est ce qu'on a des possibilités de naturaliser celà ? de rendre ça plus fluide ?
+
+dans les 3 langues
+
+après celà, on va mettre à jour un script qui nous permettra de faire toutes les opérations sur le rasberry pi
+qu'on va lancer en une fois
+
+axctuellement on a le repo dans /home/pi/aqua.../... sur le pi
+
+
+Ensuite, dans la logique du firmware, 
+le chauffage pour les tests a été mis à on, il s'agira maintenant de remettre la logique normale; vérifie et fais moi le retour
