@@ -35,7 +35,7 @@ constexpr float VCRC_MIN_HUM_RATIO_GKG = 6.0F;
 constexpr float SORBENT_MIN_HR_PCT = 40.0F;
 constexpr float SORBENT_SATURATION_DELTA = 1.0F;
 constexpr float SOLAR_DAYLIGHT_THRESHOLD = 50.0F;  // W/m2 pour considérer qu'il fait jour
-constexpr float SOLAR_PRODUCTION_THRESHOLD = 500.0F; // W/m2 pour régénération sans appoint
-constexpr float HEATER_MIN_SOC_PCT = 35.0F;
+constexpr float SOLAR_PRODUCTION_THRESHOLD = 0.0F; // W/m2 pour régénération sans appoint
+constexpr float HEATER_MIN_SOC_PCT = 0.0F;
 
 }

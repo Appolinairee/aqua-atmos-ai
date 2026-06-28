@@ -24,7 +24,7 @@ void ActuatorHub::begin() {
 
 void ActuatorHub::apply(const domain::OutputFrame& outputs, bool has_error) {
   digitalWrite(config::VCRC_RELAY_PIN,          outputs.vcrc_relay_on   ? HIGH : LOW);
-  digitalWrite(config::HEATER_RELAY_PIN,        HIGH); // test: force pompe/heater ON
+  digitalWrite(config::HEATER_RELAY_PIN,        outputs.heater_relay_on ? HIGH : LOW);
   digitalWrite(config::SORBENT_FAN_1_PWM_PIN,   outputs.fans_relay_on  ? HIGH : LOW);
 
   sorbent_servo_.write(outputs.servo_angle_deg);

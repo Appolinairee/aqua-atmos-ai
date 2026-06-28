@@ -50,15 +50,18 @@ def api_command():
     params = request.json or {}
     cmd = params.get("cmd")
     value = params.get("value")
+    # Map pour assurer la compatibilité avec le firmware ESP32 réel
+    esp32_params = params.copy()
     if cmd == "vcrc_override":
         _command_state["vcrc_active"] = value in (True, "true", "1", 1)
+        esp32_params["cmd"] = "vcrc"
     elif cmd == "sorb_mode":
         _command_state["sorbent_mode"] = value
 
     try:
         r = requests.post(
             f"http://{config.ESP32_HOST}/api/command",
-            params=params,
+            params=esp32_params,
             timeout=3,
         )
         return jsonify(r.json()), r.status_code

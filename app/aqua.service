@@ -1,13 +1,16 @@
 [Unit]
-Description=Aqua Water AI - Dashboard
-After=network.target
+Description=Aqua Atmos Dashboard
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-WorkingDirectory=/home/pi/aqua-water-ai/app
-ExecStart=/usr/bin/python3 main.py
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/aqua-atmos-ai/app
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/pi/aqua-atmos-ai/.venv/bin/python main.py
 Restart=always
 RestartSec=5
-User=pi
 
 [Install]
 WantedBy=multi-user.target

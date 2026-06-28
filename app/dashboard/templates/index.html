@@ -250,7 +250,9 @@
       width: 34px;
       height: 34px;
       border-radius: 50%;
-      background: url("https://i.pravatar.cc/96?img=47") center / cover;
+      background:
+        url("https://i.pravatar.cc/96?img=47") center / cover,
+        radial-gradient(circle at 35% 25%, #e9fbff 0 12%, #61c8f3 34%, #096fae 72%, #08213a 100%);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,.46);
     }
 
@@ -268,7 +270,7 @@
     }
 
     .system-stage {
-      min-height: 500px;
+      min-height: 460px;
       border-radius: 32px;
       overflow: hidden;
       background:
@@ -286,17 +288,17 @@
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(90deg, rgba(7, 8, 7, .86) 0%, rgba(7, 8, 7, .48) 42%, rgba(7, 8, 7, .08) 100%),
-        linear-gradient(0deg, rgba(7, 8, 7, .58) 0%, rgba(7, 8, 7, .06) 46%);
+        linear-gradient(90deg, rgba(7, 8, 7, .78) 0%, rgba(7, 8, 7, .40) 42%, rgba(7, 8, 7, .08) 100%),
+        linear-gradient(0deg, rgba(7, 8, 7, .48) 0%, rgba(7, 8, 7, .05) 46%);
       z-index: -1;
     }
 
     .stage-content {
       height: 100%;
-      padding: clamp(22px, 3vw, 42px);
+      padding: clamp(22px, 2.6vw, 34px);
       display: grid;
-      grid-template-rows: 96px 1fr 72px;
-      gap: 22px;
+      grid-template-rows: 82px 1fr 44px;
+      gap: 18px;
       position: relative;
     }
 
@@ -389,7 +391,7 @@
     .side-stack {
       display: grid;
       gap: 16px;
-      min-height: 500px;
+      min-height: 460px;
     }
 
     .state-panel {
@@ -755,39 +757,48 @@
       display: none;
       position: fixed;
       left: 50%;
-      bottom: 12px;
-      transform: translateX(-56%);
+      bottom: 14px;
+      transform: translateX(-50%);
       margin: 0;
-      height: 42px;
-      padding: 4px 5px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.88);
-      box-shadow: var(--shadow);
+      height: 56px;
+      padding: 7px;
+      border-radius: 22px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.96), rgba(242,247,246,.88));
+      box-shadow:
+        0 18px 44px rgba(17, 19, 18, .16),
+        inset 0 0 0 1px rgba(17, 19, 18, .06);
       width: max-content;
-      gap: 3px;
+      gap: 9px;
       z-index: 22;
       backdrop-filter: blur(14px);
     }
 
     .mobile-nav button {
-      width: 40px;
-      height: 40px;
+      width: 42px;
+      height: 42px;
       border: 0;
-      border-radius: 50%;
+      border-radius: 15px;
       background: transparent;
-      color: #3a413d;
+      color: #202623;
       display: grid;
       place-items: center;
       cursor: pointer;
       grid-auto-flow: column;
-      gap: 6px;
+      gap: 8px;
       padding: 0;
       transition: width .18s ease, background .18s ease;
     }
 
+    .mobile-nav button svg {
+      width: 21px;
+      height: 21px;
+      flex: 0 0 auto;
+    }
+
     .mobile-nav button span {
       display: none;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 850;
       line-height: 1;
       white-space: nowrap;
@@ -795,10 +806,12 @@
 
     .mobile-nav button.active {
       width: auto;
-      min-width: 88px;
-      padding: 0 12px;
+      min-width: 118px;
+      padding: 0 14px;
+      border-radius: 16px;
       color: white;
       background: linear-gradient(145deg, var(--brand-blue), var(--brand-blue-2));
+      box-shadow: 0 10px 24px rgba(0, 159, 227, .24);
     }
 
     .mobile-nav button.active span {
@@ -889,22 +902,27 @@
     }
 
     .assistant-toggle {
-      width: 42px;
-      height: 42px;
+      width: 54px;
+      height: 54px;
       color: white;
       background: linear-gradient(145deg, var(--brand-blue), var(--brand-blue-2));
       box-shadow: 0 18px 46px rgba(0, 159, 227, .28);
       position: relative;
     }
 
+    .assistant-toggle svg {
+      width: 25px;
+      height: 25px;
+    }
+
     .voice-wave {
       position: absolute;
-      right: 2px;
-      bottom: 52px;
-      width: 42px;
-      height: 118px;
-      padding: 11px 8px;
-      border-radius: 999px;
+      right: 62px;
+      bottom: 10px;
+      width: 92px;
+      height: 34px;
+      padding: 0 10px;
+      border-radius: 14px;
       background: rgba(255,255,255,.92);
       box-shadow: 0 18px 46px rgba(0, 159, 227, .18);
       display: none;
@@ -912,7 +930,7 @@
       justify-content: center;
       gap: 4px;
       backdrop-filter: blur(14px);
-      flex-direction: column;
+      flex-direction: row;
     }
 
     .voice-assistant.listening .voice-wave {
@@ -920,11 +938,11 @@
     }
 
     .voice-wave i {
-      width: 16px;
-      height: 4px;
+      width: 4px;
+      height: 12px;
       border-radius: 999px;
-      background: linear-gradient(90deg, var(--brand-blue), var(--brand-blue-2));
-      animation: wavePeak .82s ease-in-out infinite;
+      background: linear-gradient(180deg, var(--brand-blue), var(--brand-blue-2));
+      animation: wavePeak .96s ease-in-out infinite;
     }
 
     .voice-wave i:nth-child(2) { animation-delay: .08s; }
@@ -936,16 +954,18 @@
     .voice-wave i:nth-child(8) { animation-delay: .56s; }
 
     @keyframes wavePeak {
-      0%, 100% { width: 10px; opacity: .55; }
-      50% { width: 28px; opacity: 1; }
+      0%, 100% { height: 8px; opacity: .55; }
+      50% { height: 24px; opacity: 1; }
     }
 
     .voice-caption {
       position: absolute;
-      right: 0;
-      bottom: 118px;
-      max-width: 150px;
-      padding: 9px 12px;
+      right: 160px;
+      bottom: 10px;
+      width: max-content;
+      max-width: 220px;
+      min-height: 34px;
+      padding: 0 13px;
       border-radius: 16px;
       background: rgba(255,255,255,.94);
       color: #111312;
@@ -953,7 +973,9 @@
       font-size: 12px;
       font-weight: 850;
       line-height: 1.25;
-      text-align: center;
+      text-align: left;
+      display: inline-flex;
+      align-items: center;
       opacity: 0;
       transform: translateY(6px);
       pointer-events: none;
@@ -973,7 +995,7 @@
       inset: -7px;
       border-radius: inherit;
       border: 1px solid rgba(0, 159, 227, .34);
-      animation: voicePulse 2.2s ease-out infinite;
+      animation: voicePulse 2.8s ease-out infinite;
     }
 
     .assistant-toggle::after {
@@ -991,7 +1013,7 @@
       .shell { gap: 10px; }
       .topbar {
         min-height: 64px;
-        grid-template-columns: 76px minmax(0, 1fr);
+        grid-template-columns: 76px minmax(360px, 1fr) auto;
         padding: 6px 12px;
         border-radius: 20px;
         gap: 10px;
@@ -999,18 +1021,45 @@
       .mark { width: 72px; height: 58px; }
       .mark img { width: 70px; height: 56px; }
       .tabs { display: none; }
+      .tab {
+        min-width: 82px;
+        height: 38px;
+        padding: 0 12px;
+        font-size: 14px;
+      }
       .top-actions { gap: 8px; justify-self: end; }
       .pill { height: 34px; padding: 0 10px; font-size: 12px; }
       .profile-name { display: none; }
       .language-trigger { min-width: 62px; height: 38px; padding: 0 10px; }
       .user-profile { height: 38px; padding: 3px 5px 3px 3px; }
       .avatar { width: 32px; height: 32px; }
-      .hero-grid { grid-template-columns: minmax(0, 1.12fr) minmax(330px, .88fr); gap: 10px; }
-      .system-stage, .side-stack { min-height: 430px; }
+      .hero-grid { grid-template-columns: minmax(0, 1.18fr) minmax(300px, .82fr); gap: 10px; }
+      .system-stage, .side-stack { min-height: 400px; }
       .system-stage, .state-panel { border-radius: 26px; }
-      .state-panel { padding: 18px; }
-      .primary-actuator { min-height: 168px; padding: 18px; }
-      .stage-content { grid-template-rows: 86px 1fr 46px; }
+      .state-panel { padding: 16px; gap: 12px; }
+      .state-count { min-height: 30px; padding: 0 10px; font-size: 11px; }
+      .primary-actuator {
+        min-height: 154px;
+        padding: 16px;
+        border-radius: 22px;
+        gap: 12px;
+      }
+      .primary-name strong { font-size: 30px; }
+      .primary-name span { margin-top: 6px; font-size: 12px; }
+      .status-orb { width: 48px; height: 48px; }
+      .status-line strong { font-size: 23px; }
+      .power-readout { min-height: 40px; padding: 0 13px; }
+      .main-switch { min-height: 48px; }
+      .main-switch::after { width: 38px; height: 38px; }
+      .secondary-actuators { gap: 10px; }
+      .control-bubble {
+        min-height: 90px;
+        padding: 13px;
+        border-radius: 20px;
+      }
+      .control-icon { width: 30px; height: 30px; }
+      .control-bubble small { font-size: 11px; }
+      .stage-content { grid-template-rows: 76px 1fr 34px; }
       .headline { max-width: 460px; margin-top: 8px; }
       .headline h2 { font-size: clamp(48px, 6.2vw, 68px); }
       .headline p { max-width: 430px; font-size: 17px; }
@@ -1046,32 +1095,39 @@
       .user-profile { padding-right: 4px; }
       .system-stage {
         border-radius: 24px;
-        min-height: 480px;
+        min-height: 430px;
       }
       .floating-metrics {
         position: static;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(118px, max-content));
         justify-content: flex-start;
-        flex-wrap: wrap;
-        margin-top: 8px;
-        gap: 6px;
+        margin-top: 4px;
+        gap: 8px;
       }
       .status-live { position: static; }
       .metric-bubble {
-        min-height: 28px;
-        height: 28px;
-        padding: 0 8px;
-        border-radius: 999px;
-        gap: 5px;
-        font-size: 11px;
+        min-width: 118px;
+        min-height: 42px;
+        height: 42px;
+        padding: 0 13px;
+        border-radius: 17px;
+        gap: 7px;
+        font-size: 13px;
+        justify-content: center;
       }
       .metric-bubble span {
-        font-size: 9px;
+        font-size: 10.5px;
       }
       .metric-bubble b {
-        font-size: 11px;
+        font-size: 13px;
       }
-      .stage-content { grid-template-rows: auto auto 1fr; }
-      .headline { margin: 24px 0 0; max-width: 100%; }
+      .stage-content {
+        grid-template-rows: auto auto 1fr;
+        gap: 16px;
+        padding: 22px;
+      }
+      .headline { margin: 12px 0 0; max-width: 100%; }
       .headline h2 { font-size: 48px; }
       .headline p { font-size: 17px; max-width: 360px; }
       .secondary-actuators,
@@ -1082,30 +1138,37 @@
     }
 
     @media (max-width: 520px) {
-      .system-stage { min-height: 480px; }
+      .system-stage { min-height: 430px; }
       .floating-metrics {
-        display: flex;
-        max-width: 260px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(112px, 1fr));
+        max-width: 272px;
+        gap: 8px;
       }
       .metric-bubble {
-        width: auto;
-        justify-content: flex-start;
+        min-width: 0;
+        width: 100%;
+        justify-content: center;
       }
       .mobile-nav {
-        height: 40px;
-        padding: 4px;
+        height: 52px;
+        padding: 6px;
+        border-radius: 20px;
+        gap: 7px;
       }
       .mobile-nav button {
-        width: 30px;
-        height: 30px;
-      }
-      .mobile-nav button.active {
-        min-width: 82px;
-        padding: 0 10px;
-      }
-      .assistant-toggle {
         width: 40px;
         height: 40px;
+        border-radius: 14px;
+      }
+      .mobile-nav button.active {
+        min-width: 112px;
+        padding: 0 13px;
+        border-radius: 15px;
+      }
+      .assistant-toggle {
+        width: 52px;
+        height: 52px;
       }
       .mobile-nav {
         left: 18px;
@@ -1114,6 +1177,42 @@
       .voice-assistant {
         right: 18px;
         bottom: 12px;
+      }
+      .voice-caption {
+        right: 152px;
+        bottom: 9px;
+        max-width: 156px;
+        font-size: 12px;
+        text-align: left;
+      }
+      .voice-wave {
+        right: 60px;
+        bottom: 9px;
+        width: 86px;
+        height: 34px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .mobile-nav {
+        left: 14px;
+        right: auto;
+        transform: none;
+      }
+      .mobile-nav button:not(.active) {
+        width: 38px;
+      }
+      .mobile-nav button.active {
+        min-width: 106px;
+      }
+      .voice-caption {
+        right: 0;
+        bottom: 64px;
+        max-width: 170px;
+      }
+      .voice-wave {
+        right: 60px;
+        bottom: 9px;
       }
     }
   </style>
@@ -1305,6 +1404,132 @@
       sorbent_mode: "ABSORPTION"
     };
 
+    let currentLanguage = "fr";
+
+    const i18n = {
+      fr: {
+        navHome: "Accueil",
+        navSystem: "Systeme",
+        navControl: "Controle",
+        navHistory: "Historique",
+        live: "En direct",
+        headline: "Extraction active",
+        headlineText: "Production d'eau atmospherique pilotee en temps reel.",
+        actuators: "Etats actionneurs",
+        active: "Actif",
+        stopped: "Arrete",
+        standby: "Veille",
+        absorption: "Absorption",
+        regen: "Regeneration",
+        activeCount: "actifs",
+        todayProduction: "Production aujourd'hui",
+        dailyTotal: "Cumul quotidien",
+        efficiency: "Efficacite",
+        realtimeEff: "L/Wh temps reel",
+        trend: "Tendance production 24h",
+        assistantTitle: "Assistant vocal",
+        assistantSub: "Point intelligent du systeme",
+        ready: "Pret",
+        read: "Lire",
+        refresh: "Actualiser",
+        noData: "Aucune donnee exploitable pour le moment.",
+        point: "Point systeme",
+        air: "air",
+        humidity: "humidite",
+        production: "production",
+        degrees: "degres",
+        percent: "pour cent",
+        lph: "litres par heure",
+        vcrcOn: "VCRC actif",
+        vcrcOff: "VCRC arrete",
+        sorbAbs: "sorbant en absorption",
+        sorbRegen: "regeneration en cours",
+        sorbIdle: "sorbant en veille"
+      },
+      en: {
+        navHome: "Home",
+        navSystem: "System",
+        navControl: "Control",
+        navHistory: "History",
+        live: "Live",
+        headline: "Active extraction",
+        headlineText: "Real-time atmospheric water production control.",
+        actuators: "Actuator states",
+        active: "Active",
+        stopped: "Stopped",
+        standby: "Standby",
+        absorption: "Absorption",
+        regen: "Regeneration",
+        activeCount: "active",
+        todayProduction: "Today's production",
+        dailyTotal: "Daily total",
+        efficiency: "Efficiency",
+        realtimeEff: "L/Wh real time",
+        trend: "24h production trend",
+        assistantTitle: "Voice assistant",
+        assistantSub: "Smart system briefing",
+        ready: "Ready",
+        read: "Read",
+        refresh: "Refresh",
+        noData: "No usable data for now.",
+        point: "System briefing",
+        air: "air",
+        humidity: "humidity",
+        production: "production",
+        degrees: "degrees",
+        percent: "percent",
+        lph: "liters per hour",
+        vcrcOn: "VCRC active",
+        vcrcOff: "VCRC stopped",
+        sorbAbs: "sorbent absorbing",
+        sorbRegen: "regeneration in progress",
+        sorbIdle: "sorbent on standby"
+      },
+      ar: {
+        navHome: "الرئيسية",
+        navSystem: "النظام",
+        navControl: "التحكم",
+        navHistory: "السجل",
+        live: "مباشر",
+        headline: "استخلاص نشط",
+        headlineText: "إنتاج ماء جوي بتحكم فوري.",
+        actuators: "حالة المشغلات",
+        active: "نشط",
+        stopped: "متوقف",
+        standby: "انتظار",
+        absorption: "امتصاص",
+        regen: "تجديد",
+        activeCount: "نشطة",
+        todayProduction: "إنتاج اليوم",
+        dailyTotal: "المجموع اليومي",
+        efficiency: "الكفاءة",
+        realtimeEff: "لتر/واط ساعة مباشر",
+        trend: "اتجاه الإنتاج 24 ساعة",
+        assistantTitle: "المساعد الصوتي",
+        assistantSub: "ملخص ذكي للنظام",
+        ready: "جاهز",
+        read: "قراءة",
+        refresh: "تحديث",
+        noData: "لا توجد بيانات قابلة للاستخدام حاليا.",
+        point: "ملخص النظام",
+        air: "الهواء",
+        humidity: "الرطوبة",
+        production: "الإنتاج",
+        degrees: "درجة",
+        percent: "في المئة",
+        lph: "لتر في الساعة",
+        vcrcOn: "VCRC نشط",
+        vcrcOff: "VCRC متوقف",
+        sorbAbs: "الممتز في الامتصاص",
+        sorbRegen: "التجديد جار",
+        sorbIdle: "الممتز في الانتظار"
+      }
+    };
+
+    function tr(key) {
+      return (i18n[currentLanguage] && i18n[currentLanguage][key]) || i18n.fr[key] || key;
+    }
+
     function setText(id, value) {
       const node = document.getElementById(id);
       if (node) node.textContent = value;
@@ -1317,10 +1542,10 @@
     }
 
     function assistantText(state = currentState) {
-      if (!state) return "Aucune donnee exploitable pour le moment.";
-      const vcrc = state.vcrc_active ? "VCRC actif" : "VCRC arrete";
-      const sorb = state.sorbent_mode === "ABSORPTION" ? "sorbant en absorption" : state.sorbent_mode === "REGEN" ? "regeneration en cours" : "sorbant en veille";
-      return `Point systeme : air ${Number(state.temp_c).toFixed(1)} degres, humidite ${Number(state.humidity_pct).toFixed(0)} pour cent, production ${Number(state.water_l_h).toFixed(2)} litres par heure. ${vcrc}, ${sorb}.`;
+      if (!state) return tr("noData");
+      const vcrc = state.vcrc_active ? tr("vcrcOn") : tr("vcrcOff");
+      const sorb = state.sorbent_mode === "ABSORPTION" ? tr("sorbAbs") : state.sorbent_mode === "REGEN" ? tr("sorbRegen") : tr("sorbIdle");
+      return `${tr("point")} : ${tr("air")} ${Number(state.temp_c).toFixed(1)} ${tr("degrees")}, ${tr("humidity")} ${Number(state.humidity_pct).toFixed(0)} ${tr("percent")}, ${tr("production")} ${Number(state.water_l_h).toFixed(2)} ${tr("lph")}. ${vcrc}, ${sorb}.`;
     }
 
     function updateAssistant(state = currentState) {
@@ -1358,13 +1583,13 @@
       setText("floatPower", vcrcActive ? "500" : "0");
       setText("waterTotal", total.toFixed(1));
       setText("eff", eff.toFixed(2));
-      setText("vcrcState", vcrcActive ? "Actif" : "Arrete");
+      setText("vcrcState", vcrcActive ? tr("active") : tr("stopped"));
       setText("vcrcPower", vcrcActive ? "500 W" : "0 W");
       setText("sorbMode", "AUTO");
-      setText("sorbState", sorbModeRaw === "ABSORPTION" ? "Absorption" : heaterActive ? "Regeneration" : "Veille");
-      setText("heaterState", heaterActive ? "Actif" : "Arrete");
+      setText("sorbState", sorbModeRaw === "ABSORPTION" ? tr("absorption") : heaterActive ? tr("regen") : tr("standby"));
+      setText("heaterState", heaterActive ? tr("active") : tr("stopped"));
       setText("heaterPower", heaterActive ? "300 W" : "0 W");
-      setText("activeCount", [vcrcActive, sorbActive, heaterActive].filter(Boolean).length + "/3 actifs");
+      setText("activeCount", [vcrcActive, sorbActive, heaterActive].filter(Boolean).length + "/3 " + tr("activeCount"));
 
       const vcrcSwitch = document.getElementById("vcrcSwitch");
       if (vcrcSwitch) {
@@ -1438,6 +1663,57 @@
       if (root) root.innerHTML = values.map((v) => `<i style="height:${v}%"></i>`).join("");
     }
 
+    function applyLanguage() {
+      document.documentElement.lang = currentLanguage;
+      document.documentElement.dir = currentLanguage === "ar" ? "rtl" : "ltr";
+      if (languageLabel) languageLabel.textContent = currentLanguage.toUpperCase();
+
+      [
+        ["home", "navHome"],
+        ["system", "navSystem"],
+        ["control", "navControl"],
+        ["history", "navHistory"]
+      ].forEach(([target, key]) => {
+        document.querySelectorAll(`[data-target="${target}"]`).forEach((button) => {
+          const label = button.querySelector("span");
+          if (label) label.textContent = tr(key);
+          else button.textContent = tr(key);
+        });
+      });
+
+      const live = document.querySelector(".status-live");
+      if (live) live.lastChild.textContent = " " + tr("live");
+      const title = document.querySelector(".headline h2");
+      if (title) title.textContent = tr("headline");
+      const subtitle = document.querySelector(".headline p");
+      if (subtitle) subtitle.textContent = tr("headlineText");
+      const stateTitle = document.querySelector(".state-panel .panel-title");
+      if (stateTitle) stateTitle.textContent = tr("actuators");
+      const trendTitle = document.querySelector(".chart-panel .panel-title");
+      if (trendTitle) trendTitle.textContent = tr("trend");
+
+      const kpiLabels = document.querySelectorAll(".bottom-kpis .label");
+      if (kpiLabels[0]) kpiLabels[0].textContent = tr("todayProduction");
+      if (kpiLabels[1]) kpiLabels[1].textContent = tr("efficiency");
+      const kpiNotes = document.querySelectorAll(".bottom-kpis small");
+      if (kpiNotes[0]) kpiNotes[0].textContent = tr("dailyTotal");
+      if (kpiNotes[1]) kpiNotes[1].textContent = tr("realtimeEff");
+
+      const assistantTitle = document.querySelector(".voice-panel strong");
+      if (assistantTitle) assistantTitle.textContent = tr("assistantTitle");
+      const assistantSub = document.querySelector(".voice-panel small");
+      if (assistantSub) assistantSub.textContent = tr("assistantSub");
+      const assistantReady = document.querySelector(".voice-panel .pill");
+      if (assistantReady) assistantReady.lastChild.textContent = " " + tr("ready");
+      const voiceRead = document.getElementById("voiceSpeak");
+      if (voiceRead) voiceRead.textContent = tr("read");
+      const voiceRefresh = document.getElementById("voiceRefresh");
+      if (voiceRefresh) voiceRefresh.textContent = tr("refresh");
+
+      if (currentState) render(currentState);
+      else updateAssistant();
+    }
+
     document.querySelectorAll("[data-target]").forEach((button) => {
       button.addEventListener("click", () => setView(button.dataset.target));
     });
@@ -1445,7 +1721,6 @@
     const languageMenu = document.getElementById("languageMenu");
     const languageTrigger = document.getElementById("languageTrigger");
     const languageLabel = document.getElementById("languageLabel");
-    let currentLanguage = "fr";
     if (languageMenu && languageTrigger) {
       languageTrigger.addEventListener("click", () => {
         languageMenu.classList.toggle("open");
@@ -1453,12 +1728,11 @@
       languageMenu.querySelectorAll("[data-lang]").forEach((button) => {
         button.addEventListener("click", () => {
           currentLanguage = button.dataset.lang;
-          document.documentElement.lang = currentLanguage;
-          if (languageLabel) languageLabel.textContent = currentLanguage.toUpperCase();
           languageMenu.querySelectorAll("[data-lang]").forEach((item) => {
             item.classList.toggle("active", item === button);
           });
           languageMenu.classList.remove("open");
+          applyLanguage();
         });
       });
     }
@@ -1478,26 +1752,47 @@
         index = Math.min(index + 3, Math.max(words.length - 1, 0));
         voiceCaption.textContent = words.slice(index, index + 3).join(" ");
         if (index >= words.length - 3) clearInterval(captionTimer);
-      }, 620);
+      }, 820);
+    }
+
+    function speechLang() {
+      return currentLanguage === "en" ? "en-US" : currentLanguage === "ar" ? "ar-SA" : "fr-FR";
+    }
+
+    function pickVoice(lang) {
+      if (!("speechSynthesis" in window)) return null;
+      const voices = window.speechSynthesis.getVoices();
+      return voices.find((voice) => voice.lang === lang && /natural|premium|online|google|microsoft/i.test(voice.name))
+        || voices.find((voice) => voice.lang === lang)
+        || voices.find((voice) => voice.lang && voice.lang.slice(0, 2) === lang.slice(0, 2))
+        || null;
+    }
+
+    function speakText(text, onEnd) {
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = speechLang();
+      utterance.rate = currentLanguage === "ar" ? 0.86 : 0.92;
+      utterance.pitch = 0.96;
+      utterance.volume = 0.95;
+      const voice = pickVoice(utterance.lang);
+      if (voice) utterance.voice = voice;
+      utterance.onend = onEnd || null;
+      window.speechSynthesis.speak(utterance);
     }
 
     if (assistant && assistantToggle) {
       assistantToggle.addEventListener("click", () => {
         updateAssistant();
         assistant.classList.add("listening");
-        setTimeout(() => assistant.classList.remove("listening"), 3600);
+        setTimeout(() => assistant.classList.remove("listening"), 12000);
         const text = assistantText();
         animateVoiceCaption(text);
-        if ("speechSynthesis" in window) {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = currentLanguage === "en" ? "en-US" : currentLanguage === "ar" ? "ar" : "fr-FR";
-          utterance.onend = () => {
-            assistant.classList.remove("listening");
-            clearInterval(captionTimer);
-          };
-          window.speechSynthesis.speak(utterance);
-        }
+        speakText(text, () => {
+          assistant.classList.remove("listening");
+          clearInterval(captionTimer);
+        });
       });
     }
 
@@ -1508,12 +1803,7 @@
     if (voiceSpeak) {
       voiceSpeak.addEventListener("click", () => {
         const text = assistantText();
-        if ("speechSynthesis" in window) {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = currentLanguage === "en" ? "en-US" : currentLanguage === "ar" ? "ar" : "fr-FR";
-          window.speechSynthesis.speak(utterance);
-        }
+        speakText(text);
       });
     }
 
@@ -1536,6 +1826,7 @@
     }
 
     render(demo);
+    applyLanguage();
     buildBars();
     updateData();
     setInterval(updateData, 2000);

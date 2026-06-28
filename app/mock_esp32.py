@@ -38,7 +38,7 @@ def data():
 def command():
     cmd = request.args.get("cmd")
     val = request.args.get("value")
-    if cmd == "vcrc_override":
+    if cmd == "vcrc_override" or cmd == "vcrc":
         state["vcrc"] = (val == "true" or val == "1")
     elif cmd == "sorb_mode":
         state["sorb"] = val
