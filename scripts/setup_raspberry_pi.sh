@@ -8,6 +8,9 @@ APP_DIR="$REPO_DIR/app"
 VENV_DIR="$REPO_DIR/.venv"
 SERVICE_FILE="/etc/systemd/system/${APP_NAME}.service"
 DASHBOARD_URL="http://localhost:5000"
+ESP32_SSID="${ESP32_SSID:-AquaAtmos-V1}"
+PI_WIFI_IP="${PI_WIFI_IP:-192.168.4.2/24}"
+ESP32_GATEWAY="${ESP32_GATEWAY:-192.168.4.1}"
 
 log() {
   printf '\n[%s] %s\n' "$APP_NAME" "$1"
@@ -69,21 +72,33 @@ SERVICE
 }
 
 setup_static_ip() {
-  if [[ -f "$APP_DIR/setup_static_ip.sh" ]]; then
-    log "Configuration IP statique WiFi ESP32"
-    bash "$APP_DIR/setup_static_ip.sh" || true
+  log "Configuration IP statique WiFi ESP32"
+  if command -v nmcli >/dev/null 2>&1; then
+    if ! nmcli connection show "$ESP32_SSID" >/dev/null 2>&1; then
+      nmcli connection add type wifi con-name "$ESP32_SSID" ssid "$ESP32_SSID"
+    fi
+    nmcli connection modify "$ESP32_SSID" \
+      ipv4.addresses "$PI_WIFI_IP" \
+      ipv4.gateway "$ESP32_GATEWAY" \
+      ipv4.dns "$ESP32_GATEWAY" \
+      ipv4.method manual
+    nmcli connection up "$ESP32_SSID" || true
+    return
   fi
-}
 
-install_kiosk_hint() {
-  log "Kiosk Chromium"
-  cat > "$APP_DIR/kiosk-local.sh" <<KIOSK
-#!/usr/bin/env bash
-sleep 6
-chromium-browser --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble "$DASHBOARD_URL"
-KIOSK
-  chown "$APP_USER:$APP_USER" "$APP_DIR/kiosk-local.sh"
-  chmod +x "$APP_DIR/kiosk-local.sh"
+  if [[ -f /etc/dhcpcd.conf ]]; then
+    if ! grep -q "ssid $ESP32_SSID" /etc/dhcpcd.conf; then
+      cat >> /etc/dhcpcd.conf <<WIFI
+
+interface wlan0
+ssid $ESP32_SSID
+static ip_address=$PI_WIFI_IP
+static routers=$ESP32_GATEWAY
+static domain_name_servers=$ESP32_GATEWAY
+WIFI
+    fi
+    systemctl restart dhcpcd || true
+  fi
 }
 
 print_summary() {
@@ -92,6 +107,7 @@ print_summary() {
   echo "Statut:    systemctl status $APP_NAME --no-pager"
   echo "Logs:      journalctl -u $APP_NAME -f"
   echo "Restart:   sudo systemctl restart $APP_NAME"
+  echo "Kiosk:     chromium-browser --kiosk --noerrdialogs --disable-infobars $DASHBOARD_URL"
 }
 
 main() {
@@ -101,7 +117,6 @@ main() {
   setup_python
   install_service
   setup_static_ip
-  install_kiosk_hint
   print_summary
 }
 
