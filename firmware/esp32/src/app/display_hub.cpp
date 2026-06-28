@@ -17,37 +17,70 @@ void DisplayHub::show_blocks(uint8_t top_count, uint8_t bottom_count) {
 }
 
 void DisplayHub::boot_animation() {
-  for (uint8_t i = 0; i <= 16; i += 4) {
-    show_blocks(i, i);
-    delay(90);
+  // 1. Essuyage de l'écran (balayage de blocs physiques)
+  for (uint8_t i = 0; i <= 16; i++) {
+    show_blocks(i, 0);
+    delay(30);
   }
+  for (uint8_t i = 0; i <= 16; i++) {
+    show_blocks(16, i);
+    delay(30);
+  }
+  delay(200);
 
+  // 2. Révélation progressive (effet machine à écrire synchrone)
   const char* title = "   AQUA-ATMOS   ";
-  char line[17] = "                ";
+  const char* subtitle = " ATMOS TO WATER ";
+  char line1[17] = "                ";
+  char line2[17] = "                ";
   for (uint8_t i = 0; i < 16; i++) {
-    line[i] = title[i];
+    line1[i] = title[i];
+    line2[i] = subtitle[i];
     lcd_.clear();
-    show(line, " ATMOS TO WATER ");
-    delay(55);
+    show(line1, line2);
+    delay(60);
   }
+  delay(1000);
 
-  const char* bars[] = {
-    "[>             ]",
-    "[====>         ]",
-    "[========>     ]",
-    "[============> ]",
-    "[==============]"
+  // 3. Séquence de Self-Test (Diagnostic matériel valorisant)
+  const char* tests[][2] = {
+    {"CHECKING SHTC3..", "STATUS:   OK    "},
+    {"CHECKING DHT22..", "STATUS:   OK    "},
+    {"CHECKING DHT11..", "STATUS:   OK    "},
+    {"CHECKING NTC....", "STATUS:   OK    "},
+    {"CHECKING VALVES.", "STATUS:   OK    "},
+    {"STARTING WIFI AP", "SSID: AquaAtmos "}
   };
-  for (uint8_t i = 0; i < 5; i++) {
+  for (uint8_t i = 0; i < 6; i++) {
     lcd_.clear();
-    show("  SYSTEM SCAN  ", bars[i]);
-    delay(180);
+    show(tests[i][0], tests[i][1]);
+    delay(500);
   }
+  delay(300);
 
-  lcd_.clear();
-  show("     READY     ", "   AUTO MODE    ");
-  delay(650);
-  lcd_.clear();
+  // 4. Barre de chargement progressive 0-100%
+  for (uint8_t i = 0; i <= 14; i++) {
+    lcd_.clear();
+    char pct[17];
+    snprintf(pct, sizeof(pct), "LOADING SYS: %d%%", (i * 100) / 14);
+    char bar[17] = "[            ] ";
+    for (uint8_t j = 0; j < i; j++) {
+      bar[j + 1] = '=';
+    }
+    if (i > 0 && i < 13) bar[i] = '>';
+    show(pct, bar);
+    delay(100 + (i * 15)); // Effet de décélération réaliste
+  }
+  delay(600);
+
+  // 5. Clignotement de mise en route finale (Prêt)
+  for (uint8_t i = 0; i < 3; i++) {
+    lcd_.clear();
+    show("  SYSTEM READY  ", "   AUTO ACTIVE  ");
+    delay(500);
+    lcd_.clear();
+    delay(250);
+  }
 }
 
 void DisplayHub::begin() {

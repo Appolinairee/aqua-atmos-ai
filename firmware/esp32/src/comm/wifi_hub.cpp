@@ -41,7 +41,7 @@ const char* WEB_PAGE = R"rawliteral(
 )rawliteral";
 
 void WifiHub::begin() {
-  WiFi.softAP("AquaAtmos-V1");
+  WiFi.softAP("AquaAtmos");
   IPAddress IP = WiFi.softAPIP();
   Serial.print("Access Point actif : "); Serial.println(IP);
 
@@ -74,9 +74,15 @@ void WifiHub::handle(const domain::SensorFrame& sensors, const domain::DerivedFr
 }
 
 void WifiHub::handle_root() {
-  // Redirection vers le dashboard Flask du Raspberry Pi (IP par défaut assignée au Pi: 192.168.4.2)
-  server_.sendHeader("Location", "http://192.168.4.2:5000/", true);
-  server_.send(302, "text/plain", "");
+  // Redirection par script HTML/JS compatible portails captifs mobiles
+  String html = "<html><head><meta http-equiv=\"refresh\" content=\"0; url=http://192.168.4.2:5000/\" />"
+                "<script>window.location.href = \"http://192.168.4.2:5000/\";</script></head>"
+                "<body style=\"font-family:sans-serif; text-align:center; padding-top:50px; background:#121212; color:#eee;\">"
+                "<h2>Connexion AquaAtmos...</h2>"
+                "<p>Redirection vers le Dashboard...</p>"
+                "<a href=\"http://192.168.4.2:5000/\" style=\"color:#ff8c00; font-weight:bold; font-size:1.2em; text-decoration:none;\">Cliquez ici si la redirection ne fonctionne pas</a>"
+                "</body></html>";
+  server_.send(200, "text/html", html);
 }
 
 void WifiHub::handle_esp_local() {
@@ -85,9 +91,7 @@ void WifiHub::handle_esp_local() {
 }
 
 void WifiHub::handle_not_found() {
-  // Redirection automatique pour le portail captif
-  server_.sendHeader("Location", "http://192.168.4.2:5000/", true);
-  server_.send(302, "text/plain", "");
+  handle_root();
 }
 
 

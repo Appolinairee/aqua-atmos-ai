@@ -8,7 +8,7 @@ APP_DIR="$REPO_DIR/app"
 VENV_DIR="$REPO_DIR/.venv"
 SERVICE_FILE="/etc/systemd/system/${APP_NAME}.service"
 DASHBOARD_URL="http://localhost:5000"
-ESP32_SSID="${ESP32_SSID:-AquaAtmos-V1}"
+ESP32_SSID="${ESP32_SSID:-AquaAtmos}"
 PI_WIFI_IP="${PI_WIFI_IP:-192.168.4.2/24}"
 ESP32_GATEWAY="${ESP32_GATEWAY:-192.168.4.1}"
 
