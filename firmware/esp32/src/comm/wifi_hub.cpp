@@ -60,6 +60,7 @@ void WifiHub::setup_routing() {
     server_.send(200, "application/json", get_json_data(last_sensors_, last_derived_, last_vcrc_, last_sorbent_));
   });
   server_.on("/api/command", HTTP_POST, [this]() { handle_command(); });
+  server_.on("/api/inject", HTTP_POST, [this]() { handle_inject(); });
   server_.onNotFound([this]() { handle_not_found(); });
 }
 
@@ -124,6 +125,23 @@ void WifiHub::handle_command() {
     return;
   }
 
+  server_.send(200, "application/json", "{\"ok\":true}");
+}
+
+void WifiHub::handle_inject() {
+  String active_str = server_.arg("active");
+  if (active_str == "false" || active_str == "0") {
+    mock_sensors_.active = false;
+  } else {
+    mock_sensors_.active = true;
+    if (server_.hasArg("temp")) mock_sensors_.temp_air_c = server_.arg("temp").toFloat();
+    if (server_.hasArg("hum"))  mock_sensors_.hr_pct = server_.arg("hum").toFloat();
+    if (server_.hasArg("bat"))  mock_sensors_.soc_battery_pct = server_.arg("bat").toFloat();
+    if (server_.hasArg("res"))  mock_sensors_.reservoir_level_pct = server_.arg("res").toFloat();
+    if (server_.hasArg("cond")) mock_sensors_.temp_cond_c = server_.arg("cond").toFloat();
+    if (server_.hasArg("sol"))  mock_sensors_.solar_wm2 = server_.arg("sol").toFloat();
+    if (server_.hasArg("delta_hr")) mock_sensors_.delta_hr_sorbent = server_.arg("delta_hr").toFloat();
+  }
   server_.send(200, "application/json", "{\"ok\":true}");
 }
 

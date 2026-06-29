@@ -28,12 +28,27 @@ void setup() {
 void loop() {
   // 1. Acquisition Hardware
   domain::SensorFrame sensors = sensor_hub.read();
+
+  const auto& mock = wifi_hub.mock_sensors();
+  if (mock.active) {
+    sensors.temp_air_c = mock.temp_air_c;
+    sensors.hr_pct = mock.hr_pct;
+    sensors.hr_in_pct = mock.hr_pct;
+    sensors.soc_battery_pct = mock.soc_battery_pct;
+    sensors.reservoir_level_pct = mock.reservoir_level_pct;
+    sensors.temp_cond_c = mock.temp_cond_c;
+    sensors.solar_wm2 = mock.solar_wm2;
+    sensors.float_switch_active = (mock.reservoir_level_pct >= 95.0f);
+  }
   
   // 2. Traitement & Calculs
   domain::DerivedFrame derived;
   derived.dew_point_c = domain::compute_dew_point_c(sensors.temp_air_c, sensors.hr_pct);
   derived.humidity_ratio_gkg = domain::compute_humidity_ratio_gkg(sensors.temp_air_c, sensors.hr_pct);
   derived.delta_hr_sorbent = domain::compute_delta_hr_sorbent(sensors.hr_in_pct, sensors.hr_out_pct);
+  if (mock.active) {
+    derived.delta_hr_sorbent = mock.delta_hr_sorbent;
+  }
   domain::enrich_derived_frame(sensors, derived);
 
   const bool hard_block = control::is_hard_block(sensors);

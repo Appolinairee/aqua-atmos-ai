@@ -1,9 +1,0 @@
-- controle manuel
-- voice pour l'accessibilité: plus naturelle et plus intéressante à entendre avec un style d'animation
-- script pour tout faire sur le rasberry pi
-- les pages restantes (historique, détails capteurs, paramètres, ...)
-
-après celà, on va mettre à jour un script qui nous permettra de faire toutes les opérations sur le rasberry pi
-qu'on va lancer en une fois
-
-actuellement on a le repo dans /home/pi/aqua.../... sur le pi

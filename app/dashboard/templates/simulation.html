@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supervision AquaAtmos - Mode Démo & Simulation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --color-primary: #ffb020;
+      --color-danger: #ef4444;
+      --color-success: #10b981;
+      --color-info: #06b6d4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(255, 176, 32, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.05) 0px, transparent 50%);
+      background-size: cover;
+      background-attachment: fixed;
+      color: #f3f4f6;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border-color);
+      border-radius: 28px;
+      padding: 30px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--color-primary);
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-color);
+    }
+    .pill.active {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--color-danger);
+      border-color: rgba(239, 68, 68, 0.25);
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+    }
+
+    /* Injection Switch */
+    .switch-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      padding: 16px 20px;
+      border-radius: 18px;
+    }
+
+    .switch-info h3 {
+      font-size: 14.5px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .switch-info p {
+      font-size: 11.5px;
+      color: #9ca3af;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .4s;
+      border-radius: 34px;
+      border: 1px solid var(--border-color);
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #ffffff;
+      transition: .4s;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: var(--color-danger);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(22px);
+    }
+
+    /* Section Title */
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(255, 255, 255, 0.4);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    /* Presets */
+    .presets-container {
+      display: flex;
+      flex-direction: column;
+    }
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .preset-btn {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 12px;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: left;
+    }
+    .preset-btn:hover {
+      background: rgba(255, 176, 32, 0.08);
+      border-color: rgba(255, 176, 32, 0.25);
+      transform: translateY(-2px);
+    }
+    .preset-btn span.preset-name {
+      color: var(--color-primary);
+      font-weight: 700;
+    }
+    .preset-btn span.preset-desc {
+      font-size: 10px;
+      color: #9ca3af;
+      font-weight: 400;
+    }
+
+    /* Sliders */
+    .sliders-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .slider-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+    .slider-label {
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 500;
+    }
+    .slider-value {
+      font-weight: 700;
+      color: var(--color-info);
+    }
+    .slider-value.warn {
+      color: var(--color-primary);
+    }
+    .slider-value.danger {
+      color: var(--color-danger);
+    }
+    
+    .range-input {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+      accent-color: var(--color-primary);
+      cursor: pointer;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.3);
+      border-top: 1px solid var(--border-color);
+      padding-top: 16px;
+      margin-top: 8px;
+    }
+
+    footer a {
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><span>🔬</span> Mode Démo</h1>
+      <div id="statusPill" class="pill">Simulation Off</div>
+    </header>
+
+    <!-- Activation -->
+    <div class="switch-section">
+      <div class="switch-info">
+        <h3>Injection active</h3>
+        <p>Prend le contrôle des capteurs de l'ESP32</p>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="simActive">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <!-- Presets -->
+    <div class="presets-container">
+      <h2 class="section-title">Scénarios préconfigurés (Presets)</h2>
+      <div class="preset-grid">
+        <button class="preset-btn" onclick="loadPreset('production')">
+          <span class="preset-name">💧 Production</span>
+          <span class="preset-desc">Humide (75%), VCRC ON</span>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('regeneration')">
+          <span class="preset-name">🔥 Régénération</span>
+          <span class="preset-desc">Saturé (Delta 0.5), Soleil</span>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('reservoir')">
+          <span class="preset-name">🛑 Réservoir Plein</span>
+          <span class="preset-desc">Niveau 98%, Arrêt total</span>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('batterie')">
+          <span class="preset-name">🪫 Batterie Vide</span>
+          <span class="preset-desc">Charge 15%, Arrêt total</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sliders -->
+    <div class="sliders-container">
+      <h2 class="section-title">Contrôle manuel des capteurs</h2>
+
+      <!-- Température -->
+      <div class="slider-item">
+        <div class="slider-header">
+          <span class="slider-label">Température Air</span>
+          <span id="valTemp" class="slider-value">25.0 °C</span>
+        </div>
+        <input type="range" id="sliderTemp" class="range-input" min="5" max="45" step="0.5" value="25">
+      </div>
+
+      <!-- Humidité -->
+      <div class="slider-item">
+        <div class="slider-header">
+          <span class="slider-label">Humidité Relative</span>
+          <span id="valHum" class="slider-value">60 %</span>
+        </div>
+        <input type="range" id="sliderHum" class="range-input" min="10" max="95" step="1" value="60">
+      </div>
+
+      <!-- Batterie -->
+      <div class="slider-item">
+        <div class="slider-header">
+          <span class="slider-label">Charge Batterie (SOC)</span>
+          <span id="valBat" class="slider-value">80 %</span>
+        </div>
+        <input type="range" id="sliderBat" class="range-input" min="5" max="100" step="1" value="80">
+      </div>
+
+      <!-- Réservoir -->
+      <div class="slider-item">
+        <div class="slider-header">
+          <span class="slider-label">Niveau Réservoir</span>
+          <span id="valRes" class="slider-value">30 %</span>
+        </div>
+        <input type="range" id="sliderRes" class="range-input" min="0" max="100" step="1" value="30">
+      </div>
+
+      <!-- Delta HR Sorbant (Saturation) -->
+      <div class="slider-item">
+        <div class="slider-header">
+          <span class="slider-label">Delta HR Sorbant (Saturation si &le; 1.0)</span>
+          <span id="valDeltaHr" class="slider-value">5.0 %</span>
+        </div>
+        <input type="range" id="sliderDeltaHr" class="range-input" min="0" max="15" step="0.1" value="5">
+      </div>
+
+      <!-- PV / Solaire -->
+      <div class="slider-item">
+        <div class="slider-header">
+          <span class="slider-label">Rayonnement Solaire</span>
+          <span id="valSol" class="slider-value">0 W/m²</span>
+        </div>
+        <input type="range" id="sliderSol" class="range-input" min="0" max="1000" step="50" value="0">
+      </div>
+    </div>
+
+    <footer>
+      Supervision AquaAtmos - Retour au <a href="/">Dashboard principal</a>
+    </footer>
+  </div>
+
+  <script>
+    const simActive = document.getElementById("simActive");
+    const statusPill = document.getElementById("statusPill");
+
+    const sliders = [
+      { id: "sliderTemp", valId: "valTemp", unit: " °C", key: "temp" },
+      { id: "sliderHum", valId: "valHum", unit: " %", key: "hum" },
+      { id: "sliderBat", valId: "valBat", unit: " %", key: "bat" },
+      { id: "sliderRes", valId: "valRes", unit: " %", key: "res" },
+      { id: "sliderDeltaHr", valId: "valDeltaHr", unit: " %", key: "delta_hr" },
+      { id: "sliderSol", valId: "valSol", unit: " W/m²", key: "sol" }
+    ];
+
+    const presets = {
+      production: { temp: 25.0, hum: 75, bat: 85, res: 20, delta_hr: 5.0, sol: 0 },
+      regeneration: { temp: 32.0, hum: 45, bat: 90, res: 35, delta_hr: 0.5, sol: 600 },
+      reservoir: { temp: 25.0, hum: 60, bat: 80, res: 98, delta_hr: 5.0, sol: 0 },
+      batterie: { temp: 25.0, hum: 60, bat: 15, res: 30, delta_hr: 5.0, sol: 0 }
+    };
+
+    function loadPreset(key) {
+      const data = presets[key];
+      if (!data) return;
+
+      document.getElementById("sliderTemp").value = data.temp;
+      document.getElementById("sliderHum").value = data.hum;
+      document.getElementById("sliderBat").value = data.bat;
+      document.getElementById("sliderRes").value = data.res;
+      document.getElementById("sliderDeltaHr").value = data.delta_hr;
+      document.getElementById("sliderSol").value = data.sol;
+
+      // Activer l'injection automatiquement lors du chargement du preset
+      simActive.checked = true;
+
+      // Mettre à jour les textes
+      updateSliderLabels();
+      sendSimulationData();
+    }
+
+    function updateSliderLabels() {
+      sliders.forEach(({ id, valId, unit }) => {
+        const slider = document.getElementById(id);
+        const valSpan = document.getElementById(valId);
+        if (slider && valSpan) {
+          valSpan.textContent = slider.value + unit;
+          
+          // Coloration conditionnelle pour guider le jury
+          valSpan.className = "slider-value";
+          const val = parseFloat(slider.value);
+          if (id === "sliderBat") {
+            if (val < 20) valSpan.classList.add("danger");
+            else if (val < 40) valSpan.classList.add("warn");
+          } else if (id === "sliderRes") {
+            if (val >= 95) valSpan.classList.add("danger");
+            else if (val >= 80) valSpan.classList.add("warn");
+          } else if (id === "sliderDeltaHr") {
+            if (val <= 1.0) valSpan.classList.add("warn");
+          }
+        }
+      });
+    }
+
+    async function sendSimulationData() {
+      const payload = {
+        active: simActive.checked,
+        temp: parseFloat(document.getElementById("sliderTemp").value),
+        hum: parseFloat(document.getElementById("sliderHum").value),
+        bat: parseFloat(document.getElementById("sliderBat").value),
+        res: parseFloat(document.getElementById("sliderRes").value),
+        delta_hr: parseFloat(document.getElementById("sliderDeltaHr").value),
+        sol: parseFloat(document.getElementById("sliderSol").value)
+      };
+
+      if (simActive.checked) {
+        statusPill.textContent = "Simulation On";
+        statusPill.className = "pill active";
+      } else {
+        statusPill.textContent = "Simulation Off";
+        statusPill.className = "pill";
+      }
+
+      try {
+        await fetch("/api/inject_sensors", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        console.error("Erreur de transmission", e);
+      }
+    }
+
+    simActive.addEventListener("change", sendSimulationData);
+
+    sliders.forEach(({ id }) => {
+      document.getElementById(id).addEventListener("input", () => {
+        updateSliderLabels();
+        sendSimulationData();
+      });
+    });
+
+    // Init
+    updateSliderLabels();
+  </script>
+</body>
+</html>
