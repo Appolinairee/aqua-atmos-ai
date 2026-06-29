@@ -1,37 +1,160 @@
-# CONTEXTE ET ARCHITECTURE IA - AQUA-ATMOS
+# Partie IA - contenu slide
 
-## 1. Les entrées physiques (Capteurs)
-Le système récolte en temps réel les données environnementales et l'état interne de la machine :
-* **Données environnementales** : Température et humidité relative de l'air ambiant, intensité du rayonnement solaire et tension générée par le panneau photovoltaïque (proxy de l'ensoleillement).
-* **Données thermiques** : Températures du condenseur et du collecteur thermique solaire.
-* **Données du sorbant** : Humidité de l'air à l'entrée et à la sortie du lit de sorbant (chlorure de calcium).
-* **Données temporelles** : Heure de la journée fournie par l'horloge système.
-* **Données de sécurité** : Niveau de remplissage du réservoir d'eau et état de charge de la batterie.
+Objectif de la slide : montrer la chaine reelle du projet, directement issue des notebooks et du code source.
 
----
+## Structure conseillee
 
-## 2. La préparation des données (Traitement physique et temporel)
-Avant d'être envoyées aux modèles, les mesures brutes sont transformées en indicateurs physiques :
-* **Indicateurs thermodynamiques** : Calcul du point de rosée (seuil de condensation de l'eau) et du rapport d'humidité de l'air (quantité absolue d'eau par kilogramme d'air sec).
-* **Indicateurs d'efficacité** : Différence d'humidité relative à travers le sorbant (pour mesurer l'absorption de l'eau) et gains thermiques du collecteur.
-* **Cyclicité temporelle** : Transformation mathématique de l'heure et du jour en coordonnées sinusoïdales pour aider l'IA à appréhender les cycles naturels jour/nuit et saisonniers.
-* **Statuts logiques** : Alertes de stress de batterie, de réservoir haut et de forte humidité.
+### 1. Donnees
 
----
+**Titre court**
+Donnees d'apprentissage
 
-## 3. Les modèles d'intelligence artificielle
-Pour s'exécuter sur un microcontrôleur à faibles ressources (ESP32), les algorithmes sont légers, évalués dans le document [04_entrainement_et_benchmark_modeles.ipynb](file:///home/user/projects/aqua-atmos-ai/notebooks/04_entrainement_et_benchmark_modeles.ipynb) et convertis en code machine optimisé :
-* **Technologie** : Forêts aléatoires de classification, configurées avec un nombre d'arbres et une profondeur limités pour s'intégrer dans la mémoire du processeur.
-* **Exportation** : Les modèles entraînés sous Python sont traduits en fonctions C++ pures pour une exécution immédiate sans dépendance externe dans [inference_engine.h](file:///home/user/projects/aqua-atmos-ai/firmware/esp32/include/control/inference_engine.h).
-* **Décisions prédites par l'IA** :
-  * L'activation ou l'arrêt du module de condensation.
-  * Le mode de fonctionnement du lit de sorbant (Veille, Absorption d'humidité ou Régénération thermique).
-  * L'allumage ou l'extinction de la résistance électrique chauffante d'appoint.
-  * La détection de la saturation en eau du sorbant chimique.
+**Description**
+Donnees climatiques et cycles synthetiques prepares pour entrainer les modeles.
 
----
+**Source code**
+- `notebooks/02_visualisation_climat_et_synthetique.ipynb`
+- `notebooks/03_pretraitement_pour_entrainement.ipynb`
+- `data/processed/training_dataset_prepared.csv`
 
-## 4. La logique de décision (Hybridation IA et règles matérielles)
-Le contrôle de la machine repose sur une double autorité, détaillée dans le document [decision_rules.md](file:///home/user/projects/aqua-atmos-ai/docs/decision_rules.md) :
-* **Apprentissage et anticipation (IA)** : L'IA prédit le mode de fonctionnement optimal à adopter en fonction du climat local réel (s'adapter aux climats côtiers plus ou moins humides) et du comportement observé de la machine.
-* **Sécurité absolue (Règles physiques)** : Une surcouche logique non négociable surveille en permanence la batterie et le réservoir. Si la batterie descend sous le seuil critique (20 %) ou si le réservoir dépasse le seuil de remplissage (95 %), cette logique coupe immédiatement tous les actionneurs (arrêt de la condensation, fermeture des volets du sorbant et extinction de la résistance), annulant toute proposition ou prédiction faite par l'IA.
+**Visuel recommande**
+Petit tableau colore depuis le dataset prepare.
+
+```python
+import pandas as pd
+
+df = pd.read_csv("../data/processed/training_dataset_prepared.csv")
+
+cols = [
+    "hour",
+    "temp_air_c",
+    "hr_pct",
+    "solar_wm2",
+    "soc_battery_pct",
+    "reservoir_level_pct",
+    "vcrc_state",
+    "sorbent_mode_label",
+    "heater_on_label",
+]
+
+display(
+    df[cols]
+    .head(6)
+    .style
+    .background_gradient(
+        subset=["temp_air_c", "hr_pct", "solar_wm2", "soc_battery_pct"],
+        cmap="Blues",
+    )
+    .format(precision=1)
+)
+```
+
+Version plus compacte si la colonne est trop large :
+
+```python
+compact_cols = [
+    "hour",
+    "temp_air_c",
+    "hr_pct",
+    "solar_wm2",
+    "vcrc_state",
+    "sorbent_mode_label",
+]
+
+display(
+    df[compact_cols]
+    .head(6)
+    .style
+    .background_gradient(subset=["temp_air_c", "hr_pct", "solar_wm2"], cmap="Blues")
+    .format(precision=1)
+)
+```
+
+### 2. Entrainement
+
+**Titre court**
+Modeles entraines
+
+**Description**
+Les modeles apprennent a predire les etats logiques : VCRC, mode sorbant, chauffage.
+
+**Source code**
+- `notebooks/04_entrainement_et_benchmark_modeles.ipynb`
+- `data/modeling/benchmark_test_results.csv`
+- `data/modeling/selected_models.csv`
+
+**Resultats test a afficher**
+
+| Cible | Modele | Accuracy test |
+|---|---:|---:|
+| VCRC | hist_gradient_boosting | 98.3% |
+| Mode sorbant | hist_gradient_boosting | 98.0% |
+| Chauffage | hist_gradient_boosting | 99.7% |
+| Saturation sorbant | random_forest | 99.6% |
+
+**Visuel recommande**
+Utiliser la matrice de confusion deja presente dans le notebook 04. Elle montre que le modele apprend : les predictions restent concentrees sur la diagonale.
+
+Cellule existante dans le notebook :
+
+```python
+from sklearn.metrics import confusion_matrix
+
+for row in best_models.itertuples(index=False):
+    target_name = row.target
+    model_name = row.selected_model
+    pipeline = fitted_models[target_name][model_name]
+    y_pred = pipeline.predict(X_test)
+
+    labels = sorted(y_test[target_name].unique().tolist())
+    matrix = confusion_matrix(y_test[target_name], y_pred, labels=labels)
+    plt.figure(figsize=(7, 6))
+    ax = plt.gca()
+    sns.heatmap(matrix, annot=True, fmt="d", cmap="Blues", cbar=False, ax=ax)
+    ax.set_title(f"{target_name} - {model_name}")
+    ax.set_xlabel("Prediction")
+    ax.set_ylabel("Verite")
+    ax.set_xticklabels(labels)
+    ax.set_yticklabels(labels)
+    plt.tight_layout()
+    plt.show()
+```
+
+### 3. Resultat embarque
+
+**Titre court**
+IA sur ESP32
+
+**Description**
+Les modeles sont exportes en C/C++ puis appeles localement par le firmware ESP32.
+
+**Source code**
+- `scripts/export_models.py`
+- `firmware/esp32/include/control/generated/`
+- `firmware/esp32/include/control/inference_engine.h`
+- `firmware/esp32/include/control/rule_engine.h`
+
+**Mermaid style identique a `schema_electronique.md`**
+
+```mermaid
+flowchart TB
+  D[Donnees preparees<br/>features + labels] --> P[Modele Python<br/>entrainement]
+  P --> C[Export C++<br/>m2cgen]
+  C --> E[ESP32<br/>inference locale]
+  E --> F[Fusion<br/>regles + IA]
+  F --> S[Securite<br/>hard block prioritaire]
+
+  classDef sensor fill:#e8f5ff,stroke:#2563eb,color:#0f172a,stroke-width:1px;
+  classDef iface fill:#ecfdf5,stroke:#059669,color:#0f172a,stroke-width:1px;
+  classDef control fill:#fff7ed,stroke:#ea580c,color:#0f172a,stroke-width:1px;
+  classDef output fill:#fef2f2,stroke:#dc2626,color:#0f172a,stroke-width:1px;
+
+  class D sensor;
+  class P iface;
+  class C,E control;
+  class F,S output;
+```
+
+## Phrase de conclusion
+
+L'IA aide a choisir le bon mode de fonctionnement, mais elle ne commande jamais seule : les regles et les securites gardent le controle.
