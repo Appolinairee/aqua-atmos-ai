@@ -55,7 +55,17 @@ void WifiHub::begin() {
 void WifiHub::setup_routing() {
   server_.on("/", [this]() { handle_root(); });
   server_.on("/esp", [this]() { handle_esp_local(); });
-  server_.on("/generate_204", [this]() { handle_root(); }); // Android captive portal
+
+  // Captive portal probes: Android, iOS/macOS, Windows.
+  server_.on("/generate_204", [this]() { handle_root(); });
+  server_.on("/gen_204", [this]() { handle_root(); });
+  server_.on("/hotspot-detect.html", [this]() { handle_root(); });
+  server_.on("/library/test/success.html", [this]() { handle_root(); });
+  server_.on("/connecttest.txt", [this]() { handle_root(); });
+  server_.on("/redirect", [this]() { handle_root(); });
+  server_.on("/ncsi.txt", [this]() { handle_root(); });
+  server_.on("/fwlink", [this]() { handle_root(); });
+
   server_.on("/api/data", [this]() {
     server_.send(200, "application/json", get_json_data(last_sensors_, last_derived_, last_vcrc_, last_sorbent_));
   });

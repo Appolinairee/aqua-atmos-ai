@@ -347,7 +347,7 @@ digitalWrite(config::HEATER_RELAY_PIN, outputs.heater_relay_on ? HIGH : LOW);
 
 ## 11. Supervision Raspberry Pi et dashboard
 
-L'ESP32 cree le point d'acces `AquaAtmos-V1`. Le Raspberry Pi se connecte a ce reseau avec une IP statique `192.168.4.2`. L'ESP32 redirige le portail captif vers le dashboard du Pi : `http://192.168.4.2:5000/`.
+L'ESP32 cree le point d'acces `AquaAtmos`. Le Raspberry Pi se connecte a ce reseau avec une IP statique `192.168.4.2`. L'ESP32 redirige le portail captif vers le dashboard du Pi : `http://192.168.4.2:5000/`.
 
 Le Pi fait trois choses :
 
