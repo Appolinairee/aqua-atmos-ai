@@ -1,0 +1,51 @@
+name: aqua-atmos
+
+services:
+  mock-esp32:
+    container_name: aqua-mock-esp32
+    image: ghcr.io/appolinairee/aqua-atmos-ai:latest
+    command: ["python", "app/mock_esp32.py"]
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/data', timeout=2)",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  dashboard:
+    container_name: aqua-dashboard
+    image: ghcr.io/appolinairee/aqua-atmos-ai:latest
+    command: ["python", "app/main.py"]
+    depends_on:
+      mock-esp32:
+        condition: service_healthy
+    environment:
+      ESP32_HOST: mock-esp32:8080
+      PYTHONPATH: app
+      APP_ENV: production
+    ports:
+      - "5000:5000"
+    volumes:
+      - aqua-data:/app/data
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  aqua-data:

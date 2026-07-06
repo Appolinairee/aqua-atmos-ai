@@ -1,0 +1,90 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches: ["develop"]
+
+env:
+  IMAGE: ghcr.io/appolinairee/aqua-atmos-ai
+
+jobs:
+  deploy-staging:
+    name: Build, push & deploy staging
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:staging
+            ${{ env.IMAGE }}:staging-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: GHCR_TOKEN
+          script: |
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            if [ ! -d ~/aqua-atmos-ai ]; then
+              git clone https://github.com/${{ github.repository }}.git ~/aqua-atmos-ai
+            fi
+            cd ~/aqua-atmos-ai
+            git fetch origin develop
+            git checkout develop
+            git pull origin develop
+            docker compose -f docker-compose.staging.yml down --remove-orphans || true
+            docker compose -f docker-compose.staging.yml up -d --pull always --force-recreate
+            docker image prune -f || true
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd ~/aqua-atmos-ai
+            echo "=== Staging container status ==="
+            docker compose -f docker-compose.staging.yml ps
+            echo ""
+            echo "=== Last 50 log lines ==="
+            docker compose -f docker-compose.staging.yml logs --tail=50
+            echo ""
+            echo "=== Health check ==="
+            sleep 5
+            curl -sf http://localhost:5001/api/latest > /dev/null \
+              && echo "✅ Staging dashboard responding on port 5001" \
+              || (echo "❌ Staging dashboard not responding on port 5001" && exit 1)

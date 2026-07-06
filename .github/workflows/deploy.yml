@@ -1,0 +1,98 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches: ["main"]
+
+env:
+  IMAGE: ghcr.io/appolinairee/aqua-atmos-ai
+
+jobs:
+  deploy:
+    name: Build, push & deploy production
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: GHCR_TOKEN
+          script: |
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            if [ ! -d ~/aqua-atmos-ai ]; then
+              git clone https://github.com/${{ github.repository }}.git ~/aqua-atmos-ai
+            fi
+            cd ~/aqua-atmos-ai
+            git stash
+            git pull origin main
+            docker compose down --remove-orphans || true
+            docker compose up -d --pull always --force-recreate
+            docker image prune -f || true
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd ~/aqua-atmos-ai
+            echo "=== Container status ==="
+            docker compose ps
+            echo ""
+            echo "=== Last 50 log lines ==="
+            docker compose logs --tail=50
+            echo ""
+            echo "=== Security checks ==="
+            for svc in aqua-mock-esp32 aqua-dashboard; do
+              PROC_USER=$(docker exec "$svc" id 2>/dev/null || true)
+              echo "$svc process user: $PROC_USER"
+              if echo "$PROC_USER" | grep -q "uid=0"; then
+                echo "❌ SECURITY: $svc is running as root!"
+                exit 1
+              fi
+            done
+            echo "✅ Containers are running as non-root"
+            echo ""
+            echo "=== Health check ==="
+            sleep 5
+            curl -sf http://localhost:5000/api/latest > /dev/null \
+              && echo "✅ Dashboard responding on port 5000" \
+              || (echo "❌ Dashboard not responding on port 5000" && exit 1)
