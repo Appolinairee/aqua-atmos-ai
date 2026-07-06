@@ -9,7 +9,9 @@ import time
 from pathlib import Path
 
 import pytest
-import requests
+
+# Saute tout le module si requests n'est pas installé (job unit sans app deps)
+requests = pytest.importorskip("requests")
 
 ROOT = Path(__file__).resolve().parents[1]
 MOCK_URL = "http://127.0.0.1:8080/api/data"
