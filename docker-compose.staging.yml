@@ -37,6 +37,9 @@ services:
       ESP32_HOST: mock-esp32:8080
       PYTHONPATH: app
       APP_ENV: staging
+      USE_AWS_SECRETS: "true"
+      AWS_SECRET_NAME: "aqua_atmos_app_secrets"
+      AWS_REGION: "eu-north-1"
     ports:
       - "5001:5000"
     volumes:

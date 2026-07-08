@@ -8,6 +8,8 @@ __pycache__/
 venv/
 env/
 ENV/
+.env
+
 
 # Packaging and build artifacts
 build/
@@ -49,4 +51,5 @@ todo
 .terraform/
 *.tfstate
 *.tfstate.*
-.terraform.lock.hcl
+.terraform.lock.hcl
+*.tfvars

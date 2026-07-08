@@ -1,0 +1,7 @@
+app_secrets = {
+  ESP32_HOST       = "192.168.4.1"
+  FETCH_INTERVAL_S = "2"
+  DB_PATH          = "data/history.db"
+  DASHBOARD_HOST   = "0.0.0.0"
+  DASHBOARD_PORT   = "5000"
+}
