@@ -50,5 +50,16 @@ services:
     cap_drop:
       - ALL
 
+  nginx:
+    container_name: aqua-staging-nginx
+    image: nginx:alpine
+    depends_on:
+      - dashboard
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+
 volumes:
   aqua-staging-data:
