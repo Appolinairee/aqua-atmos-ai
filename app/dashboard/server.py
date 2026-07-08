@@ -38,6 +38,11 @@ def apply_successful_command(cmd: str, value, payload: dict) -> dict:
         payload["vcrc_locked_until"] = locked_until
     elif cmd == "sorb_mode":
         _command_state["sorbent_mode"] = value
+        _command_state["heater_active"] = value == "REGEN"
+    elif cmd == "heater":
+        heater_value = value in (True, "true", "1", 1)
+        _command_state["heater_active"] = heater_value
+        payload["heater_active"] = heater_value
     return payload
 
 
@@ -159,6 +164,8 @@ def api_command():
 def api_inject_sensors():
     params = request.json or {}
     active = params.get("active", False)
+    if active:
+        _command_state.clear()
     payload = {
         "active": "true" if active else "false",
         "temp": params.get("temp", 25.0),
@@ -169,6 +176,17 @@ def api_inject_sensors():
         "sol": params.get("sol", 0.0),
         "delta_hr": params.get("delta_hr", 5.0)
     }
+    if "sorb" in params:
+        payload["sorb"] = params.get("sorb")
+        _command_state["sorbent_mode"] = params.get("sorb")
+    if "heater" in params:
+        heater_value = params.get("heater") in (True, "true", "1", 1)
+        payload["heater"] = "true" if heater_value else "false"
+        _command_state["heater_active"] = heater_value
+    if "vcrc" in params:
+        vcrc_value = params.get("vcrc") in (True, "true", "1", 1)
+        payload["vcrc"] = "true" if vcrc_value else "false"
+        _command_state["vcrc_active"] = vcrc_value
 
     try:
         r = requests.post(

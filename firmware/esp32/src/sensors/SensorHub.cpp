@@ -124,14 +124,23 @@ domain::SensorFrame SensorHub::read() {
   frame.temp_cond_c = read_ntc_temp_c();
   frame.ntc_ok = last_ntc_ok_;
 
-  // --- 5. Débitmètre ---
-  frame.water_flow_ml_min = read_flow_lpm() * 1000.0f;
+  float raw_flow = read_flow_lpm();
+  // Filtre anti-bruit : une production > 10 L/h (0.166 L/min) est physiquement impossible pour ce systeme
+  if (raw_flow > 0.166f) {
+    frame.water_flow_ml_min = 0.0f;
+  } else {
+    frame.water_flow_ml_min = raw_flow * 1000.0f;
+  }
 
   // --- 6. Float switch (fixé jusqu'à validation câblage) ---
   frame.float_switch_active = false;
 
-  // --- 7. Réservoir (fixé jusqu'à validation capteur) ---
-  frame.reservoir_level_pct = config::FALLBACK_RESERVOIR_LEVEL_PCT;
+  // --- 7. Réservoir ---
+  if (frame.water_flow_ml_min > 0.0f) {
+    frame.reservoir_level_pct = frame.water_flow_ml_min;
+  } else {
+    frame.reservoir_level_pct = 0.0f;
+  }
 
   // --- 8. Batterie ---
   float bat_adc  = static_cast<float>(analogRead(config::BATTERY_VOLTAGE_ADC_PIN));

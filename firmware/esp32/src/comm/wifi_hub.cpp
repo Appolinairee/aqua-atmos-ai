@@ -111,7 +111,7 @@ void WifiHub::handle_command() {
   String cmd   = server_.arg("cmd");
   String value = server_.arg("value");
 
-  if (cmd == "vcrc_override") {
+  if (cmd == "vcrc_override" || cmd == "vcrc") {
     overrides_.vcrc_enabled = true;
     overrides_.vcrc_value   = (value == "true" || value == "1");
   } else if (cmd == "vcrc_auto") {
@@ -144,6 +144,9 @@ void WifiHub::handle_inject() {
     mock_sensors_.active = false;
   } else {
     mock_sensors_.active = true;
+    overrides_.vcrc_enabled   = false;
+    overrides_.sorb_enabled   = false;
+    overrides_.heater_enabled = false;
     if (server_.hasArg("temp")) mock_sensors_.temp_air_c = server_.arg("temp").toFloat();
     if (server_.hasArg("hum"))  mock_sensors_.hr_pct = server_.arg("hum").toFloat();
     if (server_.hasArg("bat"))  mock_sensors_.soc_battery_pct = server_.arg("bat").toFloat();
@@ -151,6 +154,23 @@ void WifiHub::handle_inject() {
     if (server_.hasArg("cond")) mock_sensors_.temp_cond_c = server_.arg("cond").toFloat();
     if (server_.hasArg("sol"))  mock_sensors_.solar_wm2 = server_.arg("sol").toFloat();
     if (server_.hasArg("delta_hr")) mock_sensors_.delta_hr_sorbent = server_.arg("delta_hr").toFloat();
+    if (server_.hasArg("vcrc")) {
+      overrides_.vcrc_enabled = true;
+      String vcrc = server_.arg("vcrc");
+      overrides_.vcrc_value = (vcrc == "true" || vcrc == "1");
+    }
+    if (server_.hasArg("sorb")) {
+      overrides_.sorb_enabled = true;
+      String sorb = server_.arg("sorb");
+      if (sorb == "ABSORPTION")      overrides_.sorb_value = domain::SorbentDecision::Mode::Absorption;
+      else if (sorb == "REGEN")      overrides_.sorb_value = domain::SorbentDecision::Mode::Regeneration;
+      else                           overrides_.sorb_value = domain::SorbentDecision::Mode::Veille;
+    }
+    if (server_.hasArg("heater")) {
+      overrides_.heater_enabled = true;
+      String heater = server_.arg("heater");
+      overrides_.heater_value = (heater == "true" || heater == "1");
+    }
   }
   server_.send(200, "application/json", "{\"ok\":true}");
 }
@@ -160,13 +180,13 @@ String WifiHub::get_json_data(const domain::SensorFrame& s, const domain::Derive
     (sb.mode == domain::SorbentDecision::Mode::Absorption)   ? "ABSORPTION" :
     (sb.mode == domain::SorbentDecision::Mode::Regeneration) ? "REGEN" : "VEILLE";
 
-  char buf[256];
+  char buf[320];
   snprintf(buf, sizeof(buf),
-    "{\"temp\":%.1f,\"hum\":%.1f,\"bat\":%.0f,\"flow\":%.2f,\"dew\":%.1f,"
-    "\"vcrc\":%s,\"sorb\":\"%s\",\"hour\":%d}",
-    s.temp_air_c, s.hr_pct, s.soc_battery_pct,
+    "{\"temp\":%.1f,\"hum\":%.1f,\"bat\":%.0f,\"res\":%.0f,\"flow\":%.2f,\"dew\":%.1f,"
+    "\"vcrc\":%s,\"sorb\":\"%s\",\"heater\":%s,\"hour\":%d}",
+    s.temp_air_c, s.hr_pct, s.soc_battery_pct, s.reservoir_level_pct,
     s.water_flow_ml_min / 1000.0f, d.dew_point_c,
-    v.state ? "true" : "false", sorb_str, s.hour_of_day);
+    v.state ? "true" : "false", sorb_str, sb.heater_on ? "true" : "false", s.hour_of_day);
   return String(buf);
 }
 

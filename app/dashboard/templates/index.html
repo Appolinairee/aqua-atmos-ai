@@ -128,6 +128,7 @@
       line-height: 1;
       font-size: 15px;
       font-weight: 700;
+      text-decoration: none;
     }
 
     .tab.active {
@@ -244,6 +245,28 @@
       font-weight: 780;
       white-space: nowrap;
       line-height: 1;
+    }
+
+    .demo-link {
+      height: 42px;
+      padding: 0 13px;
+      border-radius: 999px;
+      color: white;
+      background: var(--black);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 850;
+      text-decoration: none;
+      box-shadow: 0 10px 28px rgba(7, 8, 7, .16);
+      white-space: nowrap;
+    }
+
+    .demo-link svg {
+      width: 17px;
+      height: 17px;
     }
 
     .avatar {
@@ -831,6 +854,9 @@
       border: 0;
       background: rgba(255,255,255,.14);
       justify-content: flex-start;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
     }
 
     .mini-switch::after {
@@ -858,6 +884,7 @@
 
     .mini-switch.sending {
       justify-content: center;
+      cursor: pointer;
     }
 
     .mini-switch.sending::after {
@@ -955,7 +982,8 @@
       backdrop-filter: blur(14px);
     }
 
-    .mobile-nav button {
+    .mobile-nav button,
+    .mobile-nav a {
       width: 42px;
       height: 42px;
       border: 0;
@@ -969,15 +997,18 @@
       gap: 8px;
       padding: 0;
       transition: width .18s ease, background .18s ease;
+      text-decoration: none;
     }
 
-    .mobile-nav button svg {
+    .mobile-nav button svg,
+    .mobile-nav a svg {
       width: 21px;
       height: 21px;
       flex: 0 0 auto;
     }
 
-    .mobile-nav button span {
+    .mobile-nav button span,
+    .mobile-nav a span {
       display: none;
       font-size: 12.5px;
       font-weight: 850;
@@ -985,7 +1016,8 @@
       white-space: nowrap;
     }
 
-    .mobile-nav button.active {
+    .mobile-nav button.active,
+    .mobile-nav a.active {
       width: auto;
       min-width: 118px;
       padding: 0 14px;
@@ -995,7 +1027,8 @@
       box-shadow: 0 10px 24px rgba(0, 159, 227, .24);
     }
 
-    .mobile-nav button.active span {
+    .mobile-nav button.active span,
+    .mobile-nav a.active span {
       display: inline;
     }
 
@@ -1007,6 +1040,7 @@
       display: grid;
       justify-items: end;
       gap: 10px;
+      pointer-events: none;
     }
 
     .voice-panel {
@@ -1080,6 +1114,7 @@
       padding: 0 13px;
       background: rgba(255,255,255,.12);
       color: white;
+      pointer-events: auto;
     }
 
     .assistant-toggle {
@@ -1089,6 +1124,7 @@
       background: linear-gradient(145deg, var(--brand-blue), var(--brand-blue-2));
       box-shadow: 0 18px 46px rgba(0, 159, 227, .28);
       position: relative;
+      pointer-events: auto;
     }
 
     .assistant-toggle svg {
@@ -1337,12 +1373,14 @@
         border-radius: 20px;
         gap: 7px;
       }
-      .mobile-nav button {
+      .mobile-nav button,
+      .mobile-nav a {
         width: 40px;
         height: 40px;
         border-radius: 14px;
       }
-      .mobile-nav button.active {
+      .mobile-nav button.active,
+      .mobile-nav a.active {
         min-width: 112px;
         padding: 0 13px;
         border-radius: 15px;
@@ -1380,10 +1418,12 @@
         right: auto;
         transform: none;
       }
-      .mobile-nav button:not(.active) {
+      .mobile-nav button:not(.active),
+      .mobile-nav a:not(.active) {
         width: 38px;
       }
-      .mobile-nav button.active {
+      .mobile-nav button.active,
+      .mobile-nav a.active {
         min-width: 106px;
       }
       .voice-caption {
@@ -1411,12 +1451,13 @@
           <button class="tab" type="button" data-target="system">Systeme</button>
           <button class="tab" type="button" data-target="control">Controle</button>
           <button class="tab" type="button" data-target="history">Historique</button>
+          <a class="tab" href="/simulation">Demo</a>
         </nav>
 
         <div class="top-actions">
           <button class="user-profile" type="button" aria-label="Profil utilisateur">
             <span class="avatar"></span>
-            <span class="profile-name">Samira El Amrani</span>
+            <span class="profile-name">Meryem QUERCHI</span>
             <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </button>
           <div class="language-menu" id="languageMenu">
@@ -1554,6 +1595,10 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><path d="M21 8.5V17c0 3-1.5 5-5 5H8c-3.5 0-5-2-5-5V8.5c0-3 1.5-5 5-5h8c3.5 0 5 2 5 5Z"/><path d="M8 11h8"/><path d="M8 16h4"/></svg>
         <span>Historique</span>
       </button>
+      <a href="/simulation" aria-label="Demo">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3 4 14h7l-1 7 7-11h-7l0-7Z"/><path d="M17 4h3v3"/><path d="M20 4l-5 5"/></svg>
+        <span>Demo</span>
+      </a>
     </nav>
 
     <div class="voice-assistant" id="voiceAssistant">
@@ -1632,7 +1677,7 @@
       water_l_h: 0.42,
       water_total_l: 3.8,
       efficiency_l_wh: 0.31,
-      vcrc_active: true,
+      vcrc_active: false,
       sorbent_mode: "ABSORPTION"
     };
 
@@ -1795,6 +1840,30 @@
       return type === "RUN" ? vcrcRunSeconds : vcrcRestSeconds;
     }
 
+    function saveVcrcLock() {
+      if (!vcrcLock) {
+        localStorage.removeItem("aqua_vcrc_lock");
+        return;
+      }
+      localStorage.setItem("aqua_vcrc_lock", JSON.stringify(vcrcLock));
+    }
+
+    function loadVcrcLock() {
+      try {
+        const raw = localStorage.getItem("aqua_vcrc_lock");
+        if (!raw) return;
+        const stored = JSON.parse(raw);
+        if (!stored || Number(stored.lockedUntilMs) <= Date.now()) {
+          localStorage.removeItem("aqua_vcrc_lock");
+          return;
+        }
+        vcrcLock = stored;
+        updateVcrcTimerUi();
+      } catch (err) {
+        localStorage.removeItem("aqua_vcrc_lock");
+      }
+    }
+
     function startVcrcLock(type, seconds, pending = false) {
       const totalSeconds = Math.max(1, Number(seconds) || 1);
       vcrcLock = {
@@ -1803,6 +1872,7 @@
         totalSeconds,
         lockedUntilMs: Date.now() + totalSeconds * 1000
       };
+      saveVcrcLock();
       updateVcrcTimerUi();
     }
 
@@ -1818,6 +1888,7 @@
           totalSeconds: vcrcDurationFor(type),
           lockedUntilMs: Number.isFinite(lockedUntilMs) ? lockedUntilMs : Date.now() + remaining * 1000
         };
+        saveVcrcLock();
         updateVcrcTimerUi();
         return true;
       }
@@ -1827,6 +1898,7 @@
     function clearVcrcLock() {
       vcrcLock = null;
       vcrcPendingCommand = null;
+      saveVcrcLock();
       updateVcrcTimerUi();
     }
 
@@ -1852,7 +1924,10 @@
         return;
       }
 
-      if (vcrcLock) vcrcLock = null;
+      if (vcrcLock) {
+        vcrcLock = null;
+        saveVcrcLock();
+      }
       if (timerDiv) timerDiv.classList.remove("active", "on", "off");
       if (editButton) editButton.classList.remove("active", "on");
       if (vcrcSwitch) vcrcSwitch.disabled = vcrcSending;
@@ -1877,11 +1952,13 @@
       const heaterSwitch = document.getElementById("heaterSwitch");
       if (heaterSwitch) {
         heaterSwitch.classList.toggle("sending", active);
-        heaterSwitch.disabled = active;
+        heaterSwitch.disabled = false;
+        heaterSwitch.removeAttribute("disabled");
       }
       if (active) setText("heaterState", "Envoi...");
       else if (currentState) {
-        setText("heaterState", currentState.sorbent_mode === "REGEN" ? tr("active") : tr("stopped"));
+        const heaterActive = currentState.heater_active !== undefined ? !!currentState.heater_active : currentState.sorbent_mode === "REGEN";
+        setText("heaterState", heaterActive ? tr("active") : tr("stopped"));
       }
     }
 
@@ -1961,6 +2038,38 @@
       updateVcrcTimerUi();
     }
 
+    async function forceVcrcTimerOverride() {
+      if (!vcrcLock || !currentState) return;
+      const confirmed = window.confirm("Forcer le changement VCRC maintenant ? Cette action ignore le timer de securite cote interface.");
+      if (!confirmed) return;
+      const next = !currentState.vcrc_active;
+      closeVcrcTimerModal();
+      setVcrcSending(true);
+      try {
+        await fetch("/api/vcrc_settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            rest_seconds: vcrcRestSeconds,
+            run_seconds: vcrcRunSeconds,
+            allow_force: true
+          })
+        });
+        vcrcAllowForce = true;
+        const payload = await sendCommand("vcrc_override", next ? "true" : "false", { force: true });
+        if (payload.vcrc_active !== undefined && !!payload.vcrc_active !== next) {
+          throw new Error("Etat VCRC non confirme");
+        }
+        clearVcrcLock();
+        render({ ...(currentState || demo), vcrc_active: next });
+      } catch (err) {
+        console.error("Override VCRC impossible", err);
+      } finally {
+        setVcrcSending(false);
+        updateVcrcTimerUi();
+      }
+    }
+
     function render(d) {
       currentState = d;
       const temp = Number(d.temp_c ?? 25);
@@ -1971,11 +2080,11 @@
       const vcrcActive = !!d.vcrc_active;
       currentState = { ...d, vcrc_active: vcrcActive };
       const sorbModeRaw = d.sorbent_mode || "VEILLE";
-      const heaterActive = sorbModeRaw === "REGEN";
+      const heaterActive = d.heater_active !== undefined ? !!d.heater_active : sorbModeRaw === "REGEN";
       const sorbActive = sorbModeRaw === "ABSORPTION" || heaterActive;
 
       const syncedVcrcLock = syncVcrcLockFromServer(d);
-      if (!vcrcPendingCommand && !syncedVcrcLock && lastVcrcState === null && vcrcActive) {
+      if (!vcrcPendingCommand && !syncedVcrcLock && !vcrcLock && lastVcrcState === null && vcrcActive) {
         startVcrcLock("RUN", vcrcDurationFor("RUN"), false);
       } else if (!vcrcPendingCommand && !syncedVcrcLock && lastVcrcState !== null && lastVcrcState !== vcrcActive) {
         startVcrcLock(vcrcActive ? "RUN" : "REST", vcrcDurationFor(vcrcActive ? "RUN" : "REST"), false);
@@ -1991,7 +2100,7 @@
       setText("vcrcState", vcrcActive ? tr("active") : tr("stopped"));
       setText("vcrcPower", vcrcActive ? "500 W" : "0 W");
       setText("sorbMode", "AUTO");
-      setText("sorbState", sorbModeRaw === "ABSORPTION" ? tr("absorption") : heaterActive ? tr("regen") : tr("standby"));
+      setText("sorbState", sorbModeRaw === "ABSORPTION" ? tr("absorption") : sorbModeRaw === "REGEN" ? tr("regen") : tr("standby"));
       setText("heaterState", heaterActive ? tr("active") : tr("stopped"));
       setText("heaterPower", heaterActive ? "300 W" : "0 W");
       setText("activeCount", [vcrcActive, sorbActive, heaterActive].filter(Boolean).length + "/3 " + tr("activeCount"));
@@ -2006,7 +2115,8 @@
       const heaterSwitch = document.getElementById("heaterSwitch");
       if (heaterSwitch) {
         heaterSwitch.classList.toggle("on", heaterActive);
-        heaterSwitch.disabled = heaterSending;
+        heaterSwitch.disabled = false;
+        heaterSwitch.removeAttribute("disabled");
       }
       updateAssistant(d);
     }
@@ -2053,7 +2163,8 @@
           vcrc_active: !!d.vcrc_active,
           vcrc_cooldown_remaining_seconds: d.vcrc_cooldown_remaining_seconds,
           vcrc_locked_until: d.vcrc_locked_until,
-          sorbent_mode: d.sorbent_mode || "VEILLE"
+          sorbent_mode: d.sorbent_mode || "VEILLE",
+          heater_active: d.heater_active
         });
 
         const fallback = d.temp_c === 25.0 && d.humidity_pct === 60.0;
@@ -2226,6 +2337,9 @@
     const vcrcTimerCancel = document.getElementById("vcrcTimerCancel");
     if (vcrcTimerCancel) vcrcTimerCancel.addEventListener("click", closeVcrcTimerModal);
 
+    const vcrcTimerForce = document.getElementById("vcrcTimerForce");
+    if (vcrcTimerForce) vcrcTimerForce.addEventListener("click", forceVcrcTimerOverride);
+
     const vcrcTimerSave = document.getElementById("vcrcTimerSave");
     if (vcrcTimerSave) vcrcTimerSave.addEventListener("click", saveVcrcSettings);
 
@@ -2266,13 +2380,16 @@
     const heaterSwitch = document.getElementById("heaterSwitch");
     if (heaterSwitch) {
       heaterSwitch.addEventListener("click", async () => {
-        if (debounceCommand(lastHeaterClickAt) || heaterSwitch.disabled || heaterSending) return;
+        if (debounceCommand(lastHeaterClickAt) || heaterSending) return;
         lastHeaterClickAt = Date.now();
-        const regen = !(currentState && currentState.sorbent_mode === "REGEN");
+        const heaterActive = currentState && currentState.heater_active !== undefined
+          ? !!currentState.heater_active
+          : currentState && currentState.sorbent_mode === "REGEN";
+        const next = !heaterActive;
         setHeaterSending(true);
         try {
-          await sendCommand("sorb_mode", regen ? "REGEN" : "ABSORPTION");
-          render({ ...(currentState || demo), sorbent_mode: regen ? "REGEN" : "ABSORPTION" });
+          await sendCommand("heater", next ? "true" : "false");
+          render({ ...(currentState || demo), heater_active: next });
         } catch (err) {
           setHeaterSending(false);
         } finally {
@@ -2281,6 +2398,7 @@
       });
     }
 
+    loadVcrcLock();
     render(demo);
     applyLanguage();
     loadVcrcSettings();

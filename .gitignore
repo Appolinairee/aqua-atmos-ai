@@ -44,3 +44,9 @@ Thumbs.db
 .github/copilot-instructions.md
 secrets
 todo
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl

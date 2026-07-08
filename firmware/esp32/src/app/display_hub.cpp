@@ -20,13 +20,13 @@ void DisplayHub::boot_animation() {
   // 1. Essuyage de l'écran (balayage de blocs physiques)
   for (uint8_t i = 0; i <= 16; i++) {
     show_blocks(i, 0);
-    delay(30);
+    delay(5);
   }
   for (uint8_t i = 0; i <= 16; i++) {
     show_blocks(16, i);
-    delay(30);
+    delay(5);
   }
-  delay(200);
+  delay(20);
 
   // 2. Révélation progressive (effet machine à écrire synchrone)
   const char* title = "   AQUA-ATMOS   ";
@@ -38,9 +38,9 @@ void DisplayHub::boot_animation() {
     line2[i] = subtitle[i];
     lcd_.clear();
     show(line1, line2);
-    delay(60);
+    delay(10);
   }
-  delay(1000);
+  delay(100);
 
   // 3. Séquence de Self-Test (Diagnostic matériel valorisant)
   const char* tests[][2] = {
@@ -54,9 +54,9 @@ void DisplayHub::boot_animation() {
   for (uint8_t i = 0; i < 6; i++) {
     lcd_.clear();
     show(tests[i][0], tests[i][1]);
-    delay(500);
+    delay(50);
   }
-  delay(300);
+  delay(30);
 
   // 4. Barre de chargement progressive 0-100%
   for (uint8_t i = 0; i <= 14; i++) {
@@ -69,17 +69,17 @@ void DisplayHub::boot_animation() {
     }
     if (i > 0 && i < 13) bar[i] = '>';
     show(pct, bar);
-    delay(100 + (i * 15)); // Effet de décélération réaliste
+    delay(10); // Effet de chargement ultra rapide
   }
-  delay(600);
+  delay(60);
 
   // 5. Clignotement de mise en route finale (Prêt)
   for (uint8_t i = 0; i < 3; i++) {
     lcd_.clear();
     show("  SYSTEM READY  ", "   AUTO ACTIVE  ");
-    delay(500);
+    delay(100);
     lcd_.clear();
-    delay(250);
+    delay(50);
   }
 }
 

@@ -8,7 +8,9 @@ class Snapshot:
     temp_c: float
     humidity_pct: float
     battery_pct: float
+    reservoir_level_pct: float
     flow_lpm: float
     hour: int
     vcrc_active: bool
     sorbent_mode: str
+    heater_active: bool = False

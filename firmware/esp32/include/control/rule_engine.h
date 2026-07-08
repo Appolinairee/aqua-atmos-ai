@@ -13,6 +13,7 @@ inline domain::VcrcDecision decide_vcrc(
     bool current_state) {
   domain::VcrcDecision decision;
   if (hard_block) return decision;
+  if (is_thermal_hazard(s.temp_cond_c)) return decision;
 
   float hr_threshold = current_state ? (config::VCRC_MIN_HR_PCT - config::VCRC_HYSTERESIS_PCT) 
                                      : config::VCRC_MIN_HR_PCT;
@@ -36,7 +37,7 @@ inline domain::SorbentDecision decide_sorbent(
 
   if (is_saturated && (has_solar || has_energy_for_heat)) {
     decision.mode = domain::SorbentDecision::Mode::Regeneration;
-    decision.heater_on = !has_solar && has_energy_for_heat;
+    decision.heater_on = true;
   } else if (s.hr_pct >= config::SORBENT_MIN_HR_PCT) {
     decision.mode = domain::SorbentDecision::Mode::Absorption;
   }
@@ -62,7 +63,7 @@ inline void fuse_decisions(
 
   fused_v.state = rule_v.state && ml_v.state;
   fused_s.mode = rule_s.mode;
-  fused_s.heater_on = rule_s.heater_on && ml_s.heater_on;
+  fused_s.heater_on = rule_s.heater_on;
 }
 
 inline domain::OutputFrame build_outputs(const domain::VcrcDecision& vcrc, const domain::SorbentDecision& sorb) {

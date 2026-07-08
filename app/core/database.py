@@ -23,21 +23,26 @@ class Database:
                 sorbent_mode  TEXT
             )
         """)
+        cols = {row[1] for row in self._conn.execute("PRAGMA table_info(snapshots)").fetchall()}
+        if "reservoir_level_pct" not in cols:
+            self._conn.execute("ALTER TABLE snapshots ADD COLUMN reservoir_level_pct REAL DEFAULT 30")
+        if "heater_active" not in cols:
+            self._conn.execute("ALTER TABLE snapshots ADD COLUMN heater_active INTEGER DEFAULT 0")
         self._conn.commit()
 
     def insert(self, s: Snapshot) -> None:
         self._conn.execute(
             """INSERT INTO snapshots
-               (timestamp, temp_c, humidity_pct, battery_pct, flow_lpm, hour, vcrc_active, sorbent_mode)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+               (timestamp, temp_c, humidity_pct, battery_pct, reservoir_level_pct, flow_lpm, hour, vcrc_active, sorbent_mode, heater_active)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (s.timestamp.isoformat(), s.temp_c, s.humidity_pct,
-             s.battery_pct, s.flow_lpm, s.hour, int(s.vcrc_active), s.sorbent_mode),
+             s.battery_pct, s.reservoir_level_pct, s.flow_lpm, s.hour, int(s.vcrc_active), s.sorbent_mode, int(s.heater_active)),
         )
         self._conn.commit()
 
     def get_recent(self, limit: int = 100) -> list[dict]:
         cur = self._conn.execute(
-            """SELECT timestamp, temp_c, humidity_pct, battery_pct, flow_lpm, hour, vcrc_active, sorbent_mode
+            """SELECT timestamp, temp_c, humidity_pct, battery_pct, reservoir_level_pct, flow_lpm, hour, vcrc_active, sorbent_mode, heater_active
                FROM snapshots ORDER BY id DESC LIMIT ?""",
             (limit,),
         )
