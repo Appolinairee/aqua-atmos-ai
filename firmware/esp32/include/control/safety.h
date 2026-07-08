@@ -20,7 +20,9 @@ inline bool is_thermal_hazard(float condenser_temp_c) {
 inline bool is_hard_block(const domain::SensorFrame& sensors) {
   return is_reservoir_full(sensors.reservoir_level_pct) || 
          is_battery_low(sensors.soc_battery_pct) ||
+         is_thermal_hazard(sensors.temp_cond_c) ||
          sensors.float_switch_active;
 }
+
 
 }  // namespace aqua_atmos::control
