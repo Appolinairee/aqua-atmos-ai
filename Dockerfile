@@ -11,8 +11,8 @@ RUN pip install --no-cache-dir -r app/requirements.txt
 COPY app/ app/
 COPY src/ src/
 COPY assets/ assets/
-COPY designs/ designs/
 RUN install -d -o aqua -g aqua data
+
 
 
 USER aqua
