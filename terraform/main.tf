@@ -53,4 +53,8 @@ resource "aws_instance" "aqua_app" {
   tags = {
     Name = "aqua-atmos-ai"
   }
+
+  root_block_device {
+    encrypted = true
+  }
 }
