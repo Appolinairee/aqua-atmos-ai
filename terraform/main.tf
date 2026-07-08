@@ -57,4 +57,6 @@ resource "aws_instance" "aqua_app" {
   root_block_device {
     encrypted = true
   }
+
+  user_data = file("install_docker.sh")
 }
