@@ -7,8 +7,9 @@
 notebooks/
 firmware/esp32/.pio
 data/history.db
-*.pdf
-*.png
-*.jpeg
+/*.pdf
+/*.png
+/*.jpeg
+
 apple-iphone-15-*-mockup/
 aqua atmos/
