@@ -3,10 +3,13 @@ import time
 
 import requests
 from flask import Flask, jsonify, render_template, request, send_from_directory
+from prometheus_flask_exporter import PrometheusMetrics
 from core.database import Database
 import config
 
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
+
 _db: Database | None = None
 _command_state: dict = {}
 VCRC_MIN_OFF_SECONDS = 300
